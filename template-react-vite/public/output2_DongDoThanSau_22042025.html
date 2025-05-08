@@ -1,0 +1,2323 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đong Đổ Thần Sầu - Phiên Bản Mở Rộng</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap');
+        
+        :root {
+            --primary: #4F46E5;
+            --secondary: #7C3AED;
+            --success: #10B981;
+            --danger: #EF4444;
+            --warning: #F59E0B;
+            --info: #3B82F6;
+            --light: #F3F4F6;
+            --dark: #1F2937;
+        }
+        
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background-color: #F5F7FA;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .game-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            position: relative;
+        }
+        
+        .screen {
+            display: none;
+            width: 100%;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+        
+        .screen.active {
+            display: block;
+        }
+        
+        .btn {
+            transition: all 0.3s ease;
+            transform: translateY(0);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+        
+        .ingredient-container {
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .ingredient-container:hover {
+            transform: translateY(-5px);
+        }
+        
+        .measuring-cup {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .liquid {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 0;
+            transition: height 0.3s ease-out;
+        }
+        
+        .fraction-marker {
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background-color: rgba(0, 0, 0, 0.3);
+            left: 0;
+            z-index: 1;
+        }
+        
+        .fraction-marker::after {
+            content: attr(data-fraction);
+            position: absolute;
+            right: -40px;
+            top: -10px;
+            font-size: 12px;
+            color: #000;
+        }
+        
+        .level-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .level-card:hover:not(.locked) {
+            transform: translateY(-10px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .level-card.locked {
+            opacity: 0.7;
+            filter: grayscale(0.8);
+            cursor: not-allowed;
+        }
+        
+        .achievement {
+            transition: all 0.3s ease;
+        }
+        
+        .achievement:hover {
+            transform: scale(1.05);
+        }
+        
+        .achievement.locked {
+            filter: grayscale(1);
+            opacity: 0.5;
+        }
+        
+        .pouring-animation {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            width: 20px;
+            height: 0;
+            background: transparent;
+            transform: translateX(-50%);
+            z-index: 10;
+        }
+        
+        .splash {
+            position: absolute;
+            width: 100%;
+            height: 20px;
+            bottom: 0;
+            left: 0;
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background-color: #f00;
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        @keyframes splash {
+            0% { transform: scale(0); opacity: 0.8; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+        
+        @keyframes confetti-fall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+        
+        .recipe-card {
+            transition: transform 0.3s ease;
+        }
+        
+        .recipe-card:hover {
+            transform: scale(1.02);
+        }
+        
+        /* Animations */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        
+        .float-animation {
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .pulse-animation {
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        .progress-bar {
+            transition: width 0.5s ease;
+        }
+        
+        /* Tooltip */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            width: 120px;
+            background-color: var(--dark);
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -60px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            .game-area {
+                flex-direction: column;
+            }
+            
+            .ingredient-shelf {
+                flex-direction: row;
+                overflow-x: auto;
+                justify-content: flex-start;
+                padding: 1rem 0;
+            }
+            
+            .ingredient-container {
+                margin-right: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <!-- Welcome Screen -->
+        <div id="welcome-screen" class="screen active flex flex-col items-center justify-center">
+            <div class="text-center p-4 rounded-lg bg-white shadow-lg max-w-md mx-auto">
+                <h1 class="text-4xl font-bold text-indigo-600 mb-3">Đong Đổ Thần Sầu</h1>
+                <p class="text-gray-700 mb-6">Học phân số thú vị qua trò chơi đong đổ nguyên liệu!</p>
+                
+                <div class="my-8">
+                    <svg class="mx-auto w-64 h-64" viewBox="0 0 200 200">
+                        <defs>
+                            <linearGradient id="liquid-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stop-color="#3B82F6" stop-opacity="0.9"/>
+                                <stop offset="100%" stop-color="#60A5FA" stop-opacity="0.9"/>
+                            </linearGradient>
+                        </defs>
+                        
+                        <!-- Measuring Cup -->
+                        <path d="M40,180 L60,40 L140,40 L160,180 Z" fill="none" stroke="#334155" stroke-width="3" />
+                        <path d="M45,170 L155,170" stroke="#334155" stroke-width="2" />
+                        
+                        <!-- Liquid -->
+                        <path class="welcome-liquid" d="M45,170 L155,170 L145,90 L55,90 Z" fill="url(#liquid-gradient)">
+                            <animate attributeName="d" dur="3s" repeatCount="indefinite" 
+                                values="M45,170 L155,170 L145,120 L55,120 Z;
+                                       M45,170 L155,170 L145,90 L55,90 Z;
+                                       M45,170 L155,170 L145,120 L55,120 Z" />
+                        </path>
+                        
+                        <!-- Fraction Lines -->
+                        <g stroke="#334155" stroke-width="1">
+                            <line x1="45" y1="170" x2="155" y2="170" stroke-width="2" />
+                            <line x1="47.5" y1="145" x2="152.5" y2="145" />
+                            <line x1="50" y1="120" x2="150" y2="120" />
+                            <line x1="52.5" y1="95" x2="147.5" y2="95" />
+                            <line x1="55" y1="70" x2="145" y2="70" />
+                        </g>
+                        
+                        <!-- Fraction Labels -->
+                        <g fill="#1E293B" font-size="10" text-anchor="end">
+                            <text x="40" y="174">0</text>
+                            <text x="40" y="149">1/4</text>
+                            <text x="40" y="124">1/2</text>
+                            <text x="40" y="99">3/4</text>
+                            <text x="40" y="74">1</text>
+                        </g>
+                        
+                        <!-- Pouring Animation -->
+                        <path class="welcome-pour float-animation" d="M100,0 C100,0 100,40 100,40" stroke="#60A5FA" stroke-width="5" stroke-linecap="round" stroke-dasharray="1 6">
+                            <animate attributeName="stroke-dashoffset" from="0" to="35" dur="1s" repeatCount="indefinite" />
+                        </path>
+                    </svg>
+                </div>
+                
+                <div class="flex flex-col space-y-3 mb-4">
+                    <button id="start-game" class="btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-full">
+                        Bắt Đầu Chơi
+                    </button>
+                    <button id="how-to-play" class="btn bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-full">
+                        Hướng Dẫn Chơi
+                    </button>
+                    <button id="view-achievements" class="btn bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-6 rounded-full">
+                        Thành Tích
+                    </button>
+                </div>
+                
+                <p class="text-xs text-gray-500 mt-4">Phiên bản 2.0 - Học phân số vui vẻ!</p>
+            </div>
+        </div>
+        
+        <!-- Level Select Screen -->
+        <div id="level-select-screen" class="screen">
+            <div class="bg-white rounded-lg shadow-lg p-4 max-w-6xl mx-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-indigo-600">Chọn Màn Chơi</h2>
+                    <button id="back-to-menu" class="btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-full">
+                        <i class="fas fa-arrow-left mr-2"></i> Quay Lại
+                    </button>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+                    <!-- Level cards will be dynamically generated here -->
+                </div>
+                
+                <div class="bg-blue-50 p-4 rounded-lg mb-6">
+                    <h3 class="font-bold text-blue-700 mb-2">Tiến Trình Của Bạn</h3>
+                    <div class="w-full bg-gray-200 rounded-full h-4 mb-2">
+                        <div id="progress-bar" class="bg-blue-600 h-4 rounded-full progress-bar" style="width: 0%"></div>
+                    </div>
+                    <div class="flex justify-between text-sm text-gray-600">
+                        <span>Đã hoàn thành: <span id="completed-levels">0</span>/<span id="total-levels">0</span></span>
+                        <span>Sao đã kiếm được: <span id="total-stars">0</span>/<span id="max-stars">0</span></span>
+                    </div>
+                </div>
+                
+                <div class="bg-yellow-50 p-4 rounded-lg">
+                    <h3 class="font-bold text-yellow-700 mb-2">Thử Thách Đặc Biệt</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="recipe-card bg-white p-3 rounded-lg shadow border border-yellow-200">
+                            <h4 class="font-bold text-center mb-2">Công Thức Bánh</h4>
+                            <p class="text-sm text-gray-600 mb-2">Kết hợp nhiều nguyên liệu theo công thức</p>
+                            <button class="btn w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg special-level" data-level="recipe">
+                                Thử Thách
+                            </button>
+                        </div>
+                        <div class="recipe-card bg-white p-3 rounded-lg shadow border border-purple-200">
+                            <h4 class="font-bold text-center mb-2">So Sánh Phân Số</h4>
+                            <p class="text-sm text-gray-600 mb-2">Đong đổ và so sánh lượng nguyên liệu</p>
+                            <button class="btn w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-lg special-level" data-level="compare">
+                                Thử Thách
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- How To Play Screen -->
+        <div id="how-to-play-screen" class="screen">
+            <div class="bg-white rounded-lg shadow-lg p-4 max-w-4xl mx-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-indigo-600">Hướng Dẫn Chơi</h2>
+                    <button id="back-from-howto" class="btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-full">
+                        <i class="fas fa-arrow-left mr-2"></i> Quay Lại
+                    </button>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div class="bg-blue-50 p-4 rounded-lg">
+                        <h3 class="font-bold text-blue-700 mb-2">Nguyên Tắc Cơ Bản</h3>
+                        <ul class="list-disc list-inside text-gray-700 space-y-2">
+                            <li>Đổ nguyên liệu vào cốc đo theo phân số yêu cầu</li>
+                            <li>Nhấn giữ vào bình nguyên liệu để đổ</li>
+                            <li>Thả ra để dừng đổ</li>
+                            <li>Nhấn "Xác Nhận" khi bạn nghĩ đã đạt được mức yêu cầu</li>
+                            <li>Nhấn "Đổ Lại" nếu muốn làm lại từ đầu</li>
+                        </ul>
+                    </div>
+                    
+                    <div>
+                        <div class="bg-green-50 p-4 rounded-lg mb-4">
+                            <h3 class="font-bold text-green-700 mb-2">Tính Điểm</h3>
+                            <ul class="list-disc list-inside text-gray-700 space-y-1">
+                                <li>Độ chính xác càng cao, điểm càng nhiều</li>
+                                <li>Thời gian hoàn thành càng nhanh, điểm thưởng càng cao</li>
+                                <li>Không làm tràn nguyên liệu sẽ được điểm thưởng</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="bg-yellow-50 p-4 rounded-lg">
+                            <h3 class="font-bold text-yellow-700 mb-2">Các Loại Hoạt Động</h3>
+                            <ul class="list-disc list-inside text-gray-700 space-y-1">
+                                <li>Đong đổ đơn giản: Đổ một nguyên liệu theo phân số</li>
+                                <li>Công thức: Kết hợp nhiều nguyên liệu với tỷ lệ khác nhau</li>
+                                <li>So sánh: Đong hai nguyên liệu và so sánh lượng của chúng</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-indigo-50 p-4 rounded-lg mb-6">
+                    <h3 class="font-bold text-indigo-700 mb-2">Các Cấp Độ</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div class="bg-white p-3 rounded-lg shadow">
+                            <h4 class="font-bold text-center">Tập Sự</h4>
+                            <ul class="text-sm text-gray-600 list-disc list-inside">
+                                <li>Phân số đơn giản (1/2, 1/3, 1/4)</li>
+                                <li>Chỉ chất lỏng</li>
+                                <li>Tốc độ chảy chậm</li>
+                            </ul>
+                        </div>
+                        <div class="bg-white p-3 rounded-lg shadow">
+                            <h4 class="font-bold text-center">Chuyên Viên</h4>
+                            <ul class="text-sm text-gray-600 list-disc list-inside">
+                                <li>Phân số trung bình (3/4, 2/3, 5/8)</li>
+                                <li>Chất lỏng và bột</li>
+                                <li>Tốc độ chảy trung bình</li>
+                            </ul>
+                        </div>
+                        <div class="bg-white p-3 rounded-lg shadow">
+                            <h4 class="font-bold text-center">Bậc Thầy</h4>
+                            <ul class="text-sm text-gray-600 list-disc list-inside">
+                                <li>Phân số khó (7/10, 11/12)</li>
+                                <li>Nhiều loại nguyên liệu</li>
+                                <li>Tốc độ chảy nhanh</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-center">
+                    <button id="start-from-howto" class="btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-full">
+                        Bắt Đầu Chơi Ngay
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Achievements Screen -->
+        <div id="achievements-screen" class="screen">
+            <div class="bg-white rounded-lg shadow-lg p-4 max-w-4xl mx-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-indigo-600">Thành Tích</h2>
+                    <button id="back-from-achievements" class="btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-full">
+                        <i class="fas fa-arrow-left mr-2"></i> Quay Lại
+                    </button>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6" id="achievements-container">
+                    <!-- Achievements will be dynamically generated here -->
+                </div>
+                
+                <div class="bg-purple-50 p-4 rounded-lg mb-6">
+                    <h3 class="font-bold text-purple-700 mb-2">Bảng Xếp Hạng</h3>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thứ Hạng</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Màn Chơi</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Điểm</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Độ Chính Xác</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thời Gian</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200" id="leaderboard">
+                                <!-- Leaderboard entries will be dynamically generated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="bg-blue-50 p-4 rounded-lg">
+                    <h3 class="font-bold text-blue-700 mb-2">Thống Kê Người Chơi</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div class="bg-white p-3 rounded-lg shadow text-center">
+                            <div class="text-2xl font-bold text-indigo-600" id="total-pours">0</div>
+                            <div class="text-sm text-gray-600">Lần Đổ</div>
+                        </div>
+                        <div class="bg-white p-3 rounded-lg shadow text-center">
+                            <div class="text-2xl font-bold text-green-600" id="perfect-pours">0</div>
+                            <div class="text-sm text-gray-600">Đổ Hoàn Hảo</div>
+                        </div>
+                        <div class="bg-white p-3 rounded-lg shadow text-center">
+                            <div class="text-2xl font-bold text-purple-600" id="total-score">0</div>
+                            <div class="text-sm text-gray-600">Tổng Điểm</div>
+                        </div>
+                        <div class="bg-white p-3 rounded-lg shadow text-center">
+                            <div class="text-2xl font-bold text-yellow-600" id="play-time">0</div>
+                            <div class="text-sm text-gray-600">Phút Chơi</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Game Screen -->
+        <div id="game-screen" class="screen">
+            <div class="bg-white rounded-lg shadow-lg p-4 max-w-6xl mx-auto">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-indigo-600" id="level-title">Level 1</h2>
+                        <p class="text-gray-600" id="level-description">Đong đổ nguyên liệu cơ bản</p>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button id="exit-level" class="btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-full">
+                            <i class="fas fa-times mr-2"></i> Thoát
+                        </button>
+                        <button id="restart-level" class="btn bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-full">
+                            <i class="fas fa-redo mr-2"></i> Chơi Lại
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="bg-blue-50 p-3 rounded-lg mb-4">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <span class="font-bold text-blue-700" id="task-counter">Nhiệm vụ: 1/5</span>
+                        </div>
+                        <div>
+                            <span class="font-bold text-purple-700" id="score-display">Điểm: 0</span>
+                        </div>
+                        <div>
+                            <span class="font-bold text-red-700" id="time-display">Thời gian: 60s</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex flex-col md:flex-row game-area">
+                    <!-- Task Area -->
+                    <div class="md:w-1/4 p-3 bg-gray-50 rounded-lg">
+                        <div class="bg-white p-3 rounded-lg shadow mb-4">
+                            <h3 class="font-bold text-center mb-2">Yêu Cầu</h3>
+                            <div id="task-container" class="text-center p-2 border-2 border-dashed border-gray-300 rounded-lg">
+                                <p class="text-lg font-bold" id="task-description">Đong 1/3 cup nước</p>
+                                <div class="mt-2">
+                                    <img id="task-image" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f4a7.svg" class="w-12 h-12 mx-auto" alt="Ingredient">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="recipe-container" class="bg-white p-3 rounded-lg shadow mb-4 hidden">
+                            <h3 class="font-bold text-center mb-2">Công Thức</h3>
+                            <ul class="text-sm text-gray-600 space-y-2" id="recipe-list">
+                                <!-- Recipe items will be added here -->
+                            </ul>
+                        </div>
+                        
+                        <div id="task-hint" class="bg-yellow-50 p-3 rounded-lg text-sm">
+                            <p class="text-yellow-800">Nhấn giữ và thả để đổ nguyên liệu vào cốc đo.</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Main Game Area -->
+                    <div class="md:w-2/4 p-3 flex flex-col items-center justify-center relative">
+                        <div class="mb-4">
+                            <div id="feedback-message" class="text-center mb-3 text-lg font-bold hidden">Tuyệt vời!</div>
+                            
+                            <div class="measuring-cup w-64 h-80 mx-auto relative">
+                                <!-- Cup SVG -->
+                                <svg viewBox="0 0 200 250" class="w-full h-full">
+                                    <!-- Cup outline -->
+                                    <path d="M40,240 L60,40 L140,40 L160,240 Z" fill="none" stroke="#334155" stroke-width="3" />
+                                    <path d="M45,230 L155,230" stroke="#334155" stroke-width="2" />
+                                    
+                                    <!-- Liquid -->
+                                    <path id="liquid-path" d="M45,230 L155,230 L155,230 L45,230 Z" fill="url(#liquid-gradient)" />
+                                    
+                                    <!-- Fraction Lines -->
+                                    <g stroke="#334155" stroke-width="1" id="fraction-lines">
+                                        <!-- Lines will be added dynamically -->
+                                    </g>
+                                    
+                                    <!-- Fraction Labels -->
+                                    <g fill="#1E293B" font-size="10" text-anchor="end" id="fraction-labels">
+                                        <!-- Labels will be added dynamically -->
+                                    </g>
+                                    
+                                    <!-- Handle -->
+                                    <path d="M140,40 Q160,20 160,60" fill="none" stroke="#334155" stroke-width="3" />
+                                    
+                                    <!-- Pouring Animation -->
+                                    <path id="pour-stream" d="M100,0 C100,0 100,0 100,0" stroke="#60A5FA" stroke-width="0" stroke-linecap="round" />
+                                    
+                                    <!-- Splash Animation -->
+                                    <circle id="splash-circle" cx="100" cy="0" r="0" fill="rgba(96, 165, 250, 0)" />
+                                </svg>
+                            </div>
+                        </div>
+                        
+                        <div class="flex space-x-3 mt-4">
+                            <button id="pour-again" class="btn bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-6 rounded-full">
+                                <i class="fas fa-redo mr-2"></i> Đổ Lại
+                            </button>
+                            <button id="confirm-pour" class="btn bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-6 rounded-full hidden">
+                                <i class="fas fa-check mr-2"></i> Xác Nhận
+                            </button>
+                        </div>
+                        
+                        <!-- Accuracy Meter (appears after pouring) -->
+                        <div id="accuracy-meter" class="w-full mt-4 hidden">
+                            <p class="text-center text-sm text-gray-600 mb-1">Độ chính xác</p>
+                            <div class="w-full h-4 bg-gray-200 rounded-full overflow-hidden">
+                                <div id="accuracy-bar" class="h-full rounded-full" style="width: 0%; background-color: #10B981;"></div>
+                            </div>
+                            <p class="text-center text-sm font-bold mt-1" id="accuracy-value">0%</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Ingredients Area -->
+                    <div class="md:w-1/4 p-3 bg-gray-50 rounded-lg">
+                        <h3 class="font-bold text-center mb-3">Nguyên Liệu</h3>
+                        <div class="ingredient-shelf flex flex-col space-y-4 items-center">
+                            <!-- Ingredients will be dynamically generated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Level Complete Screen -->
+        <div id="level-complete-screen" class="screen">
+            <div class="bg-white rounded-lg shadow-lg p-4 max-w-md mx-auto text-center">
+                <div class="mb-4">
+                    <svg class="w-24 h-24 mx-auto text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <h2 class="text-3xl font-bold text-green-600 mb-2">Hoàn Thành!</h2>
+                    <p class="text-gray-600" id="level-complete-message">Bạn đã hoàn thành màn chơi thành công!</p>
+                </div>
+                
+                <div class="bg-gray-50 p-4 rounded-lg mb-6">
+                    <div class="grid grid-cols-2 gap-3 mb-4">
+                        <div class="bg-white p-3 rounded-lg shadow text-center">
+                            <div class="text-2xl font-bold text-purple-600" id="final-score">0</div>
+                            <div class="text-sm text-gray-600">Điểm Số</div>
+                        </div>
+                        <div class="bg-white p-3 rounded-lg shadow text-center">
+                            <div class="text-2xl font-bold text-blue-600" id="final-accuracy">0%</div>
+                            <div class="text-sm text-gray-600">Độ Chính Xác</div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center justify-center space-x-1 mb-2">
+                        <svg id="star1" class="w-8 h-8 text-gray-300" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                        </svg>
+                        <svg id="star2" class="w-8 h-8 text-gray-300" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                        </svg>
+                        <svg id="star3" class="w-8 h-8 text-gray-300" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                        </svg>
+                    </div>
+                    
+                    <p class="text-sm text-gray-600" id="stars-message">Đạt 2/3 sao!</p>
+                </div>
+                
+                <div id="achievement-unlocked" class="bg-purple-50 p-3 rounded-lg mb-6 hidden">
+                    <h3 class="font-bold text-purple-700 mb-2">Thành Tích Mở Khóa!</h3>
+                    <div class="bg-white p-3 rounded-lg shadow">
+                        <div class="text-lg font-bold text-indigo-600" id="new-achievement-name">Bậc Thầy Đong Đổ</div>
+                        <p class="text-sm text-gray-600" id="new-achievement-desc">Đạt 100% độ chính xác 5 lần liên tiếp</p>
+                    </div>
+                </div>
+                
+                <div class="flex flex-col space-y-3">
+                    <button id="next-level" class="btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-full">
+                        Màn Tiếp Theo
+                    </button>
+                    <button id="replay-level" class="btn bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-full">
+                        Chơi Lại
+                    </button>
+                    <button id="back-to-map" class="btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-full">
+                        Về Bản Đồ
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Game Data
+        const gameData = {
+            levels: [
+                {
+                    id: 1,
+                    name: "Tập Sự 1",
+                    description: "Bắt đầu với phân số đơn giản",
+                    difficulty: "easy",
+                    requiredScore: 0,
+                    maxTasks: 3,
+                    timeLimit: 90,
+                    tasks: [
+                        { fraction: "1/2", ingredient: "water", points: 100 },
+                        { fraction: "1/4", ingredient: "milk", points: 100 },
+                        { fraction: "3/4", ingredient: "water", points: 150 }
+                    ],
+                    availableIngredients: ["water", "milk"]
+                },
+                {
+                    id: 2,
+                    name: "Tập Sự 2",
+                    description: "Tiếp tục với phân số cơ bản",
+                    difficulty: "easy",
+                    requiredScore: 200,
+                    maxTasks: 4,
+                    timeLimit: 90,
+                    tasks: [
+                        { fraction: "1/3", ingredient: "water", points: 120 },
+                        { fraction: "2/3", ingredient: "milk", points: 120 },
+                        { fraction: "1/4", ingredient: "oil", points: 150 },
+                        { fraction: "3/4", ingredient: "water", points: 150 }
+                    ],
+                    availableIngredients: ["water", "milk", "oil"]
+                },
+                {
+                    id: 3,
+                    name: "Chuyên Viên 1",
+                    description: "Thử thách với phân số phức tạp hơn",
+                    difficulty: "medium",
+                    requiredScore: 500,
+                    maxTasks: 4,
+                    timeLimit: 80,
+                    tasks: [
+                        { fraction: "3/5", ingredient: "water", points: 180 },
+                        { fraction: "5/8", ingredient: "milk", points: 200 },
+                        { fraction: "2/3", ingredient: "oil", points: 180 },
+                        { fraction: "7/8", ingredient: "water", points: 220 }
+                    ],
+                    availableIngredients: ["water", "milk", "oil"]
+                },
+                {
+                    id: 4,
+                    name: "Chuyên Viên 2",
+                    description: "Thử với nguyên liệu dạng bột",
+                    difficulty: "medium",
+                    requiredScore: 800,
+                    maxTasks: 4,
+                    timeLimit: 80,
+                    tasks: [
+                        { fraction: "2/5", ingredient: "flour", points: 200 },
+                        { fraction: "3/4", ingredient: "sugar", points: 180 },
+                        { fraction: "5/8", ingredient: "flour", points: 220 },
+                        { fraction: "7/10", ingredient: "sugar", points: 250 }
+                    ],
+                    availableIngredients: ["flour", "sugar"]
+                },
+                {
+                    id: 5,
+                    name: "Bậc Thầy 1",
+                    description: "Thử thách với phân số khó",
+                    difficulty: "hard",
+                    requiredScore: 1200,
+                    maxTasks: 5,
+                    timeLimit: 75,
+                    tasks: [
+                        { fraction: "5/6", ingredient: "water", points: 250 },
+                        { fraction: "7/10", ingredient: "milk", points: 250 },
+                        { fraction: "11/12", ingredient: "oil", points: 300 },
+                        { fraction: "5/8", ingredient: "flour", points: 270 },
+                        { fraction: "7/8", ingredient: "sugar", points: 280 }
+                    ],
+                    availableIngredients: ["water", "milk", "oil", "flour", "sugar"]
+                },
+                {
+                    id: 6,
+                    name: "Bậc Thầy 2",
+                    description: "Thử thách tốc độ nhanh",
+                    difficulty: "hard",
+                    requiredScore: 1800,
+                    maxTasks: 5,
+                    timeLimit: 60,
+                    tasks: [
+                        { fraction: "2/3", ingredient: "water", points: 280 },
+                        { fraction: "3/5", ingredient: "milk", points: 280 },
+                        { fraction: "7/12", ingredient: "oil", points: 320 },
+                        { fraction: "11/12", ingredient: "flour", points: 350 },
+                        { fraction: "5/6", ingredient: "sugar", points: 320 }
+                    ],
+                    availableIngredients: ["water", "milk", "oil", "flour", "sugar"],
+                    pourSpeed: "fast"
+                }
+            ],
+            specialLevels: {
+                recipe: {
+                    id: "recipe",
+                    name: "Công Thức Bánh",
+                    description: "Kết hợp nguyên liệu theo công thức",
+                    difficulty: "special",
+                    requiredScore: 1000,
+                    maxTasks: 1,
+                    timeLimit: 120,
+                    tasks: [
+                        { 
+                            type: "recipe",
+                            name: "Bánh Chocolate",
+                            ingredients: [
+                                { fraction: "2/3", ingredient: "flour", points: 150 },
+                                { fraction: "1/3", ingredient: "sugar", points: 150 },
+                                { fraction: "1/2", ingredient: "milk", points: 150 },
+                                { fraction: "1/4", ingredient: "oil", points: 150 }
+                            ],
+                            totalPoints: 600
+                        }
+                    ],
+                    availableIngredients: ["flour", "sugar", "milk", "oil"]
+                },
+                compare: {
+                    id: "compare",
+                    name: "So Sánh Phân Số",
+                    description: "Đong và so sánh lượng nguyên liệu",
+                    difficulty: "special",
+                    requiredScore: 800,
+                    maxTasks: 3,
+                    timeLimit: 120,
+                    tasks: [
+                        { 
+                            type: "compare",
+                            question: "Đong 2/3 nước và 3/4 sữa. Cái nào nhiều hơn?",
+                            fractions: ["2/3", "3/4"],
+                            ingredients: ["water", "milk"],
+                            correctAnswer: 1, // index of the larger fraction
+                            points: 250
+                        },
+                        { 
+                            type: "compare",
+                            question: "Đong 5/8 đường và 1/2 bột. Cái nào nhiều hơn?",
+                            fractions: ["5/8", "1/2"],
+                            ingredients: ["sugar", "flour"],
+                            correctAnswer: 0,
+                            points: 250
+                        },
+                        { 
+                            type: "compare",
+                            question: "Đong 3/5 nước và 7/10 dầu. Cái nào ít hơn?",
+                            fractions: ["3/5", "7/10"],
+                            ingredients: ["water", "oil"],
+                            correctAnswer: 0,
+                            points: 300
+                        }
+                    ],
+                    availableIngredients: ["water", "milk", "oil", "flour", "sugar"]
+                }
+            },
+            ingredients: {
+                water: {
+                    name: "Nước",
+                    type: "liquid",
+                    color: "#a8d5ff",
+                    pourRate: 1.0,
+                    icon: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f4a7.svg"
+                },
+                milk: {
+                    name: "Sữa",
+                    type: "liquid",
+                    color: "#fafafa",
+                    pourRate: 0.9,
+                    icon: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f95b.svg"
+                },
+                oil: {
+                    name: "Dầu",
+                    type: "liquid",
+                    color: "#ffd700",
+                    pourRate: 0.7,
+                    icon: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1faad.svg"
+                },
+                sugar: {
+                    name: "Đường",
+                    type: "powder",
+                    color: "#ffffff",
+                    pourRate: 1.2,
+                    icon: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f967.svg"
+                },
+                flour: {
+                    name: "Bột mì",
+                    type: "powder",
+                    color: "#f5f5dc",
+                    pourRate: 0.8,
+                    icon: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f35e.svg"
+                }
+            },
+            achievements: [
+                {
+                    id: "master_pourer",
+                    name: "Bậc Thầy Đong Đổ",
+                    description: "Đạt 100% độ chính xác 5 lần liên tiếp",
+                    icon: "🏆",
+                    condition: "perfectPours",
+                    target: 5,
+                    points: 500
+                },
+                {
+                    id: "speed_demon",
+                    name: "Thần Tốc",
+                    description: "Hoàn thành 5 nhiệm vụ trong 30 giây",
+                    icon: "⚡",
+                    condition: "timeChallenges",
+                    target: 1,
+                    points: 300
+                },
+                {
+                    id: "no_spill",
+                    name: "Không Tràn Giọt Nào",
+                    description: "Không làm tràn nguyên liệu trong cả màn",
+                    icon: "💯",
+                    condition: "noSpill",
+                    target: 1,
+                    points: 400
+                },
+                {
+                    id: "fraction_master",
+                    name: "Bậc Thầy Phân Số",
+                    description: "Hoàn thành tất cả các màn chơi",
+                    icon: "🧮",
+                    condition: "levelsCompleted",
+                    target: 6,
+                    points: 600
+                },
+                {
+                    id: "star_collector",
+                    name: "Sao Vàng Rực Rỡ",
+                    description: "Đạt 3 sao trong 10 màn chơi",
+                    icon: "⭐",
+                    condition: "threeStars",
+                    target: 10,
+                    points: 500
+                },
+                {
+                    id: "recipe_expert",
+                    name: "Chuyên Gia Công Thức",
+                    description: "Hoàn thành màn Công Thức Bánh với 3 sao",
+                    icon: "🧁",
+                    condition: "specialRecipe",
+                    target: 1,
+                    points: 400
+                }
+            ],
+            fractionMarkers: [
+                { fraction: "0", position: 0 },
+                { fraction: "1/12", position: 1/12 },
+                { fraction: "1/6", position: 1/6 },
+                { fraction: "1/4", position: 1/4 },
+                { fraction: "1/3", position: 1/3 },
+                { fraction: "5/12", position: 5/12 },
+                { fraction: "1/2", position: 1/2 },
+                { fraction: "7/12", position: 7/12 },
+                { fraction: "2/3", position: 2/3 },
+                { fraction: "3/4", position: 3/4 },
+                { fraction: "5/6", position: 5/6 },
+                { fraction: "11/12", position: 11/12 },
+                { fraction: "1", position: 1 }
+            ]
+        };
+        
+        // Game State
+        const gameState = {
+            currentScreen: "welcome-screen",
+            currentLevel: null,
+            currentSpecialLevel: null,
+            currentTask: 0,
+            taskCount: 0,
+            score: 0,
+            timeLeft: 0,
+            timer: null,
+            isPaused: false,
+            isPouring: false,
+            currentPourAmount: 0,
+            targetAmount: 0,
+            currentIngredient: null,
+            currentIngredientColor: null,
+            accuracy: 0,
+            hasSpilled: false,
+            perfectPours: 0,
+            perfectStreak: 0,
+            totalPours: 0,
+            timeChallengeCompleted: 0,
+            noSpillLevels: 0,
+            levelsCompleted: [],
+            specialLevelsCompleted: [],
+            threeStarLevels: 0,
+            cupCapacity: 1.0,
+            recipeProgress: [],
+            compareProgress: [],
+            playerStats: {
+                totalScore: 0,
+                totalPours: 0,
+                perfectPours: 0,
+                playTime: 0
+            }
+        };
+        
+        // Load saved state from localStorage if exists
+        const loadGameState = () => {
+            const savedState = localStorage.getItem('dongDoThanSauState');
+            if (savedState) {
+                const parsedState = JSON.parse(savedState);
+                // Only load progress, achievements and stats
+                gameState.levelsCompleted = parsedState.levelsCompleted || [];
+                gameState.specialLevelsCompleted = parsedState.specialLevelsCompleted || [];
+                gameState.perfectPours = parsedState.perfectPours || 0;
+                gameState.perfectStreak = parsedState.perfectStreak || 0;
+                gameState.totalPours = parsedState.totalPours || 0;
+                gameState.timeChallengeCompleted = parsedState.timeChallengeCompleted || 0;
+                gameState.noSpillLevels = parsedState.noSpillLevels || 0;
+                gameState.threeStarLevels = parsedState.threeStarLevels || 0;
+                gameState.playerStats = parsedState.playerStats || {
+                    totalScore: 0,
+                    totalPours: 0,
+                    perfectPours: 0,
+                    playTime: 0
+                };
+            }
+        };
+        
+        // Save game state to localStorage
+        const saveGameState = () => {
+            localStorage.setItem('dongDoThanSauState', JSON.stringify(gameState));
+        };
+        
+        // Navigation between screens
+        const showScreen = (screenId) => {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            document.getElementById(screenId).classList.add('active');
+            gameState.currentScreen = screenId;
+        };
+        
+        // Utility function to convert fraction string to number
+        const fractionToNumber = (fractionStr) => {
+            if (fractionStr.includes('/')) {
+                const [numerator, denominator] = fractionStr.split('/').map(Number);
+                return numerator / denominator;
+            }
+            return parseFloat(fractionStr);
+        };
+        
+        // Generate the fraction markers on the measuring cup
+        const generateFractionMarkers = () => {
+            const fractionLines = document.getElementById('fraction-lines');
+            const fractionLabels = document.getElementById('fraction-labels');
+            
+            fractionLines.innerHTML = '';
+            fractionLabels.innerHTML = '';
+            
+            gameData.fractionMarkers.forEach(marker => {
+                // Skip 0 position as it's the bottom of the cup
+                if (marker.position > 0) {
+                    // Calculate Y position (inverse because SVG y=0 is at top)
+                    const yPos = 230 - (marker.position * 190);
+                    
+                    // Add line
+                    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                    line.setAttribute("x1", "45");
+                    line.setAttribute("y1", yPos);
+                    line.setAttribute("x2", "155");
+                    line.setAttribute("y2", yPos);
+                    line.setAttribute("stroke-width", marker.position === 0.5 ? "1.5" : "1");
+                    fractionLines.appendChild(line);
+                    
+                    // Add label
+                    const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                    text.setAttribute("x", "40");
+                    text.setAttribute("y", yPos + 4);
+                    text.textContent = marker.fraction;
+                    fractionLabels.appendChild(text);
+                }
+            });
+        };
+        
+        // Generate level cards in the level select screen
+        const generateLevelCards = () => {
+            const levelContainer = document.querySelector('#level-select-screen .grid');
+            levelContainer.innerHTML = '';
+            
+            // Count total levels and stars
+            const totalLevels = gameData.levels.length + Object.keys(gameData.specialLevels).length;
+            let completedLevels = gameState.levelsCompleted.length + gameState.specialLevelsCompleted.length;
+            
+            document.getElementById('total-levels').textContent = totalLevels;
+            document.getElementById('completed-levels').textContent = completedLevels;
+            
+            // Calculate progress percentage
+            const progressPercentage = (completedLevels / totalLevels) * 100;
+            document.getElementById('progress-bar').style.width = `${progressPercentage}%`;
+            
+            // Count total stars earned and maximum possible
+            const maxStars = totalLevels * 3;
+            let totalStars = 0;
+            
+            gameState.levelsCompleted.forEach(level => {
+                totalStars += level.stars || 0;
+            });
+            
+            gameState.specialLevelsCompleted.forEach(level => {
+                totalStars += level.stars || 0;
+            });
+            
+            document.getElementById('total-stars').textContent = totalStars;
+            document.getElementById('max-stars').textContent = maxStars;
+            
+            // Generate regular level cards
+            gameData.levels.forEach(level => {
+                const isCompleted = gameState.levelsCompleted.some(l => l.id === level.id);
+                const isLocked = level.requiredScore > gameState.playerStats.totalScore;
+                
+                let stars = 0;
+                if (isCompleted) {
+                    const completedLevel = gameState.levelsCompleted.find(l => l.id === level.id);
+                    stars = completedLevel.stars || 0;
+                }
+                
+                // Create level card
+                const levelCard = document.createElement('div');
+                levelCard.className = `level-card bg-white p-4 rounded-lg shadow border-2 ${isLocked ? 'locked border-gray-300' : isCompleted ? 'border-green-300' : 'border-yellow-300'}`;
+                
+                let difficultyColor = 'text-green-600';
+                if (level.difficulty === 'medium') difficultyColor = 'text-yellow-600';
+                if (level.difficulty === 'hard') difficultyColor = 'text-red-600';
+                
+                levelCard.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <h3 class="font-bold">${level.name}</h3>
+                        <span class="text-xs font-bold ${difficultyColor}">${level.difficulty === 'easy' ? 'Dễ' : level.difficulty === 'medium' ? 'Trung bình' : 'Khó'}</span>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-3">${level.description}</p>
+                    
+                    <div class="flex items-center justify-between">
+                        <div class="flex space-x-1">
+                            <svg class="w-5 h-5 ${stars >= 1 ? 'text-yellow-400' : 'text-gray-300'}" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                            </svg>
+                            <svg class="w-5 h-5 ${stars >= 2 ? 'text-yellow-400' : 'text-gray-300'}" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                            </svg>
+                            <svg class="w-5 h-5 ${stars >= 3 ? 'text-yellow-400' : 'text-gray-300'}" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            ${isLocked ? `
+                                <div class="tooltip">
+                                    <i class="fas fa-lock text-gray-400"></i>
+                                    <span class="tooltip-text">Cần ${level.requiredScore} điểm để mở khóa</span>
+                                </div>
+                            ` : `
+                                <button class="btn bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-bold py-1 px-3 rounded-lg start-level" data-level="${level.id}">
+                                    ${isCompleted ? 'Chơi Lại' : 'Bắt Đầu'}
+                                </button>
+                            `}
+                        </div>
+                    </div>
+                `;
+                
+                if (!isLocked) {
+                    levelCard.querySelector('.start-level').addEventListener('click', () => {
+                        startLevel(level.id);
+                    });
+                }
+                
+                levelContainer.appendChild(levelCard);
+            });
+        };
+        
+        // Generate achievement cards
+        const generateAchievements = () => {
+            const achievementsContainer = document.getElementById('achievements-container');
+            achievementsContainer.innerHTML = '';
+            
+            gameData.achievements.forEach(achievement => {
+                let progress = 0;
+                let isUnlocked = false;
+                
+                // Check if achievement is unlocked
+                switch (achievement.condition) {
+                    case 'perfectPours':
+                        progress = gameState.perfectStreak;
+                        isUnlocked = progress >= achievement.target;
+                        break;
+                    case 'timeChallenges':
+                        progress = gameState.timeChallengeCompleted;
+                        isUnlocked = progress >= achievement.target;
+                        break;
+                    case 'noSpill':
+                        progress = gameState.noSpillLevels;
+                        isUnlocked = progress >= achievement.target;
+                        break;
+                    case 'levelsCompleted':
+                        progress = gameState.levelsCompleted.length;
+                        isUnlocked = progress >= achievement.target;
+                        break;
+                    case 'threeStars':
+                        progress = gameState.threeStarLevels;
+                        isUnlocked = progress >= achievement.target;
+                        break;
+                    case 'specialRecipe':
+                        const recipeCompleted = gameState.specialLevelsCompleted.find(l => l.id === 'recipe');
+                        progress = recipeCompleted && recipeCompleted.stars === 3 ? 1 : 0;
+                        isUnlocked = progress >= achievement.target;
+                        break;
+                }
+                
+                // Create achievement card
+                const achievementCard = document.createElement('div');
+                achievementCard.className = `achievement bg-white p-4 rounded-lg shadow ${isUnlocked ? 'border-2 border-green-300' : 'locked'}`;
+                
+                achievementCard.innerHTML = `
+                    <div class="text-4xl text-center mb-2">${achievement.icon}</div>
+                    <h3 class="font-bold text-center mb-1">${achievement.name}</h3>
+                    <p class="text-sm text-gray-600 text-center mb-2">${achievement.description}</p>
+                    <div class="w-full bg-gray-200 rounded-full h-2 mb-1">
+                        <div class="bg-blue-600 h-2 rounded-full" style="width: ${Math.min(100, (progress / achievement.target) * 100)}%"></div>
+                    </div>
+                    <p class="text-xs text-gray-500 text-center">${progress}/${achievement.target}</p>
+                `;
+                
+                achievementsContainer.appendChild(achievementCard);
+            });
+        };
+        
+        // Generate leaderboard entries
+        const generateLeaderboard = () => {
+            const leaderboardElement = document.getElementById('leaderboard');
+            leaderboardElement.innerHTML = '';
+            
+            // Combine regular and special levels
+            const allCompletedLevels = [
+                ...gameState.levelsCompleted.map(level => {
+                    const levelData = gameData.levels.find(l => l.id === level.id);
+                    return {
+                        ...level,
+                        name: levelData ? levelData.name : `Level ${level.id}`
+                    };
+                }),
+                ...gameState.specialLevelsCompleted.map(level => {
+                    const levelData = gameData.specialLevels[level.id];
+                    return {
+                        ...level,
+                        name: levelData ? levelData.name : `Special ${level.id}`
+                    };
+                })
+            ];
+            
+            // Sort by score descending
+            allCompletedLevels.sort((a, b) => b.score - a.score);
+            
+            // Display top 5 levels
+            allCompletedLevels.slice(0, 5).forEach((level, index) => {
+                const row = document.createElement('tr');
+                
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="text-sm font-medium text-gray-900">#${index + 1}</div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900">${level.name}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm font-bold text-indigo-600">${level.score}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900">${level.accuracy}%</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900">${level.time}s</div>
+                    </td>
+                `;
+                
+                leaderboardElement.appendChild(row);
+            });
+            
+            // If no entries, show a message
+            if (allCompletedLevels.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">
+                        Chưa có kết quả nào. Hãy hoàn thành một màn chơi!
+                    </td>
+                `;
+                leaderboardElement.appendChild(row);
+            }
+            
+            // Update player stats
+            document.getElementById('total-pours').textContent = gameState.playerStats.totalPours;
+            document.getElementById('perfect-pours').textContent = gameState.playerStats.perfectPours;
+            document.getElementById('total-score').textContent = gameState.playerStats.totalScore;
+            document.getElementById('play-time').textContent = Math.floor(gameState.playerStats.playTime / 60);
+        };
+        
+        // Initialize and setup the game
+        const initGame = () => {
+            // Load saved state
+            loadGameState();
+            
+            // Generate fraction markers
+            generateFractionMarkers();
+            
+            // Add event listeners for main menu
+            document.getElementById('start-game').addEventListener('click', () => {
+                showScreen('level-select-screen');
+                generateLevelCards();
+            });
+            
+            document.getElementById('how-to-play').addEventListener('click', () => {
+                showScreen('how-to-play-screen');
+            });
+            
+            document.getElementById('view-achievements').addEventListener('click', () => {
+                showScreen('achievements-screen');
+                generateAchievements();
+                generateLeaderboard();
+            });
+            
+            // Back button events
+            document.getElementById('back-to-menu').addEventListener('click', () => {
+                showScreen('welcome-screen');
+            });
+            
+            document.getElementById('back-from-howto').addEventListener('click', () => {
+                showScreen('welcome-screen');
+            });
+            
+            document.getElementById('back-from-achievements').addEventListener('click', () => {
+                showScreen('welcome-screen');
+            });
+            
+            document.getElementById('start-from-howto').addEventListener('click', () => {
+                showScreen('level-select-screen');
+                generateLevelCards();
+            });
+            
+            // Game exit events
+            document.getElementById('exit-level').addEventListener('click', () => {
+                if (gameState.timer) {
+                    clearInterval(gameState.timer);
+                    gameState.timer = null;
+                }
+                showScreen('level-select-screen');
+                generateLevelCards();
+            });
+            
+            document.getElementById('restart-level').addEventListener('click', () => {
+                restartLevel();
+            });
+            
+            // Level complete events
+            document.getElementById('next-level').addEventListener('click', () => {
+                // Find next level
+                const currentLevelIndex = gameData.levels.findIndex(l => l.id === gameState.currentLevel);
+                if (currentLevelIndex < gameData.levels.length - 1) {
+                    startLevel(gameData.levels[currentLevelIndex + 1].id);
+                } else {
+                    showScreen('level-select-screen');
+                    generateLevelCards();
+                }
+            });
+            
+            document.getElementById('replay-level').addEventListener('click', () => {
+                if (gameState.currentSpecialLevel) {
+                    startSpecialLevel(gameState.currentSpecialLevel);
+                } else {
+                    startLevel(gameState.currentLevel);
+                }
+            });
+            
+            document.getElementById('back-to-map').addEventListener('click', () => {
+                showScreen('level-select-screen');
+                generateLevelCards();
+            });
+            
+            // Special level buttons
+            document.querySelectorAll('.special-level').forEach(button => {
+                button.addEventListener('click', () => {
+                    const levelId = button.getAttribute('data-level');
+                    startSpecialLevel(levelId);
+                });
+            });
+            
+            // Pouring mechanics
+            document.getElementById('pour-again').addEventListener('click', () => {
+                resetPour();
+            });
+            
+            document.getElementById('confirm-pour').addEventListener('click', () => {
+                confirmPour();
+            });
+            
+            // Set up initial screen
+            showScreen('welcome-screen');
+        };
+        
+        // Start a regular level
+        const startLevel = (levelId) => {
+            // Find level data
+            const level = gameData.levels.find(l => l.id === levelId);
+            if (!level) return;
+            
+            // Reset game state for this level
+            gameState.currentLevel = levelId;
+            gameState.currentSpecialLevel = null;
+            gameState.currentTask = 0;
+            gameState.taskCount = level.maxTasks;
+            gameState.score = 0;
+            gameState.timeLeft = level.timeLimit;
+            gameState.hasSpilled = false;
+            gameState.recipeProgress = [];
+            gameState.compareProgress = [];
+            
+            // Update UI
+            document.getElementById('level-title').textContent = level.name;
+            document.getElementById('level-description').textContent = level.description;
+            document.getElementById('task-counter').textContent = `Nhiệm vụ: 1/${level.maxTasks}`;
+            document.getElementById('score-display').textContent = `Điểm: 0`;
+            document.getElementById('time-display').textContent = `Thời gian: ${level.timeLimit}s`;
+            
+            // Hide recipe container
+            document.getElementById('recipe-container').classList.add('hidden');
+            
+            // Setup ingredients
+            setupIngredients(level.availableIngredients);
+            
+            // Setup first task
+            setupTask(level.tasks[0]);
+            
+            // Start timer
+            startTimer();
+            
+            // Show game screen
+            showScreen('game-screen');
+        };
+        
+        // Start a special level (recipe or comparison)
+        const startSpecialLevel = (levelId) => {
+            // Find special level data
+            const level = gameData.specialLevels[levelId];
+            if (!level) return;
+            
+            // Reset game state for this level
+            gameState.currentLevel = null;
+            gameState.currentSpecialLevel = levelId;
+            gameState.currentTask = 0;
+            gameState.taskCount = level.maxTasks;
+            gameState.score = 0;
+            gameState.timeLeft = level.timeLimit;
+            gameState.hasSpilled = false;
+            gameState.recipeProgress = [];
+            gameState.compareProgress = [];
+            
+            // Update UI
+            document.getElementById('level-title').textContent = level.name;
+            document.getElementById('level-description').textContent = level.description;
+            document.getElementById('task-counter').textContent = `Nhiệm vụ: 1/${level.maxTasks}`;
+            document.getElementById('score-display').textContent = `Điểm: 0`;
+            document.getElementById('time-display').textContent = `Thời gian: ${level.timeLimit}s`;
+            
+            // Setup ingredients
+            setupIngredients(level.availableIngredients);
+            
+            // Setup first task based on type
+            if (levelId === 'recipe') {
+                setupRecipeTask(level.tasks[0]);
+            } else if (levelId === 'compare') {
+                setupCompareTask(level.tasks[0]);
+            }
+            
+            // Start timer
+            startTimer();
+            
+            // Show game screen
+            showScreen('game-screen');
+        };
+        
+        // Restart the current level
+        const restartLevel = () => {
+            if (gameState.timer) {
+                clearInterval(gameState.timer);
+                gameState.timer = null;
+            }
+            
+            if (gameState.currentSpecialLevel) {
+                startSpecialLevel(gameState.currentSpecialLevel);
+            } else {
+                startLevel(gameState.currentLevel);
+            }
+        };
+        
+        // Setup ingredients for the current level
+        const setupIngredients = (ingredientIds) => {
+            const ingredientShelf = document.querySelector('.ingredient-shelf');
+            ingredientShelf.innerHTML = '';
+            
+            ingredientIds.forEach(id => {
+                const ingredient = gameData.ingredients[id];
+                
+                const ingredientContainer = document.createElement('div');
+                ingredientContainer.className = 'ingredient-container bg-white p-3 rounded-lg shadow text-center';
+                ingredientContainer.dataset.ingredient = id;
+                
+                ingredientContainer.innerHTML = `
+                    <img src="${ingredient.icon}" class="w-12 h-12 mx-auto mb-2" alt="${ingredient.name}">
+                    <p class="text-sm font-bold">${ingredient.name}</p>
+                `;
+                
+                // Add pour event handlers
+                ingredientContainer.addEventListener('mousedown', (e) => {
+                    startPour(id);
+                });
+                
+                ingredientContainer.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    startPour(id);
+                });
+                
+                ingredientShelf.appendChild(ingredientContainer);
+            });
+            
+            // Global events for stopping pour
+            document.addEventListener('mouseup', stopPour);
+            document.addEventListener('touchend', stopPour);
+        };
+        
+        // Setup a standard task
+        const setupTask = (task) => {
+            gameState.targetAmount = fractionToNumber(task.fraction);
+            gameState.currentIngredient = task.ingredient;
+            gameState.currentIngredientColor = gameData.ingredients[task.ingredient].color;
+            
+            document.getElementById('task-description').textContent = `Đong ${task.fraction} cup ${gameData.ingredients[task.ingredient].name}`;
+            document.getElementById('task-image').src = gameData.ingredients[task.ingredient].icon;
+            
+            // Hide recipe container and show task container
+            document.getElementById('recipe-container').classList.add('hidden');
+            document.getElementById('task-container').classList.remove('hidden');
+            
+            // Reset pour state
+            resetPour();
+        };
+        
+        // Setup a recipe task
+        const setupRecipeTask = (task) => {
+            // Reset recipe progress
+            gameState.recipeProgress = [];
+            
+            // Hide task container and show recipe container
+            document.getElementById('task-container').classList.add('hidden');
+            document.getElementById('recipe-container').classList.remove('hidden');
+            
+            // Fill recipe list
+            const recipeList = document.getElementById('recipe-list');
+            recipeList.innerHTML = '';
+            
+            task.ingredients.forEach((item, index) => {
+                const listItem = document.createElement('li');
+                listItem.className = 'flex items-center justify-between';
+                listItem.innerHTML = `
+                    <div class="flex items-center">
+                        <img src="${gameData.ingredients[item.ingredient].icon}" class="w-6 h-6 mr-2" alt="${gameData.ingredients[item.ingredient].name}">
+                        <span>${item.fraction} cup ${gameData.ingredients[item.ingredient].name}</span>
+                    </div>
+                    <span class="ingredient-status text-gray-400"><i class="fas fa-times-circle"></i></span>
+                `;
+                recipeList.appendChild(listItem);
+                
+                // Add to recipe progress
+                gameState.recipeProgress.push({
+                    ingredient: item.ingredient,
+                    fraction: item.fraction,
+                    targetAmount: fractionToNumber(item.fraction),
+                    completed: false,
+                    accuracy: 0,
+                    points: item.points
+                });
+            });
+            
+            // Set up first ingredient
+            setupNextRecipeIngredient();
+        };
+        
+        // Setup the next ingredient in a recipe task
+        const setupNextRecipeIngredient = () => {
+            // Find the next incomplete ingredient
+            const nextIngredient = gameState.recipeProgress.find(item => !item.completed);
+            
+            if (nextIngredient) {
+                gameState.targetAmount = nextIngredient.targetAmount;
+                gameState.currentIngredient = nextIngredient.ingredient;
+                gameState.currentIngredientColor = gameData.ingredients[nextIngredient.ingredient].color;
+                
+                document.getElementById('task-container').classList.remove('hidden');
+                document.getElementById('task-description').textContent = `Đong ${nextIngredient.fraction} cup ${gameData.ingredients[nextIngredient.ingredient].name}`;
+                document.getElementById('task-image').src = gameData.ingredients[nextIngredient.ingredient].icon;
+                
+                // Reset pour state
+                resetPour();
+            } else {
+                // All ingredients are complete
+                completeRecipeTask();
+            }
+        };
+        
+        // Setup a comparison task
+        const setupCompareTask = (task) => {
+            // Reset compare progress
+            gameState.compareProgress = [];
+            
+            document.getElementById('task-container').classList.remove('hidden');
+            document.getElementById('recipe-container').classList.add('hidden');
+            
+            document.getElementById('task-description').textContent = task.question;
+            
+            // Set up the first ingredient to compare
+            gameState.targetAmount = fractionToNumber(task.fractions[0]);
+            gameState.currentIngredient = task.ingredients[0];
+            gameState.currentIngredientColor = gameData.ingredients[task.ingredients[0]].color;
+            document.getElementById('task-image').src = gameData.ingredients[task.ingredients[0]].icon;
+            
+            // Add to compare progress
+            gameState.compareProgress = [
+                {
+                    ingredient: task.ingredients[0],
+                    fraction: task.fractions[0],
+                    targetAmount: fractionToNumber(task.fractions[0]),
+                    completed: false,
+                    accuracy: 0
+                },
+                {
+                    ingredient: task.ingredients[1],
+                    fraction: task.fractions[1],
+                    targetAmount: fractionToNumber(task.fractions[1]),
+                    completed: false,
+                    accuracy: 0
+                }
+            ];
+            
+            // Reset pour state
+            resetPour();
+        };
+        
+        // Setup the next ingredient in a compare task
+        const setupNextCompareIngredient = () => {
+            // Find the next incomplete ingredient
+            const nextIngredient = gameState.compareProgress.find(item => !item.completed);
+            
+            if (nextIngredient) {
+                gameState.targetAmount = nextIngredient.targetAmount;
+                gameState.currentIngredient = nextIngredient.ingredient;
+                gameState.currentIngredientColor = gameData.ingredients[nextIngredient.ingredient].color;
+                
+                document.getElementById('task-description').textContent = `Đong ${nextIngredient.fraction} cup ${gameData.ingredients[nextIngredient.ingredient].name}`;
+                document.getElementById('task-image').src = gameData.ingredients[nextIngredient.ingredient].icon;
+                
+                // Reset pour state
+                resetPour();
+            } else {
+                // Both ingredients are complete, ask for comparison
+                promptComparison();
+            }
+        };
+        
+        // Prompt for comparison between two measurements
+        const promptComparison = () => {
+            const currentTask = gameData.specialLevels.compare.tasks[gameState.currentTask];
+            
+            // Update task description to ask for comparison
+            document.getElementById('task-description').textContent = currentTask.question;
+            document.getElementById('task-image').src = "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f914.svg";
+            
+            // Create comparison buttons
+            const compareContainer = document.createElement('div');
+            compareContainer.className = 'flex flex-col space-y-2 mt-3';
+            compareContainer.id = 'compare-buttons';
+            
+            const option1 = document.createElement('button');
+            option1.className = 'btn bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg';
+            option1.textContent = `${gameData.ingredients[currentTask.ingredients[0]].name} (${currentTask.fractions[0]})`;
+            option1.dataset.index = '0';
+            
+            const option2 = document.createElement('button');
+            option2.className = 'btn bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg';
+            option2.textContent = `${gameData.ingredients[currentTask.ingredients[1]].name} (${currentTask.fractions[1]})`;
+            option2.dataset.index = '1';
+            
+            compareContainer.appendChild(option1);
+            compareContainer.appendChild(option2);
+            
+            document.getElementById('task-container').appendChild(compareContainer);
+            
+            // Add event listeners for comparison
+            option1.addEventListener('click', () => {
+                checkComparison(0);
+            });
+            
+            option2.addEventListener('click', () => {
+                checkComparison(1);
+            });
+            
+            // Hide pour buttons
+            document.getElementById('pour-again').classList.add('hidden');
+            document.getElementById('confirm-pour').classList.add('hidden');
+        };
+        
+        // Check if the comparison answer is correct
+        const checkComparison = (selectedIndex) => {
+            const currentTask = gameData.specialLevels.compare.tasks[gameState.currentTask];
+            const isCorrect = parseInt(selectedIndex) === currentTask.correctAnswer;
+            
+            // Update UI
+            document.getElementById('feedback-message').textContent = isCorrect ? 'Chính xác!' : 'Sai rồi!';
+            document.getElementById('feedback-message').classList.remove('hidden');
+            document.getElementById('feedback-message').className = `text-center mb-3 text-lg font-bold ${isCorrect ? 'text-green-600' : 'text-red-600'}`;
+            
+            // Award points if correct
+            if (isCorrect) {
+                gameState.score += currentTask.points;
+                document.getElementById('score-display').textContent = `Điểm: ${gameState.score}`;
+            }
+            
+            // Remove comparison buttons
+            document.getElementById('compare-buttons').remove();
+            
+            // Show pour buttons again
+            document.getElementById('pour-again').classList.remove('hidden');
+            
+            // Wait before moving to next task
+            setTimeout(() => {
+                document.getElementById('feedback-message').classList.add('hidden');
+                moveToNextTask();
+            }, 2000);
+        };
+        
+        // Complete a recipe task
+        const completeRecipeTask = () => {
+            // Calculate overall accuracy
+            let totalAccuracy = 0;
+            let totalIngredients = gameState.recipeProgress.length;
+            
+            gameState.recipeProgress.forEach(item => {
+                totalAccuracy += item.accuracy;
+            });
+            
+            const averageAccuracy = totalAccuracy / totalIngredients;
+            
+            // Award bonus points based on overall accuracy
+            let bonusPoints = 0;
+            if (averageAccuracy >= 95) bonusPoints = 300;
+            else if (averageAccuracy >= 85) bonusPoints = 200;
+            else if (averageAccuracy >= 75) bonusPoints = 100;
+            
+            gameState.score += bonusPoints;
+            
+            // Show feedback
+            document.getElementById('feedback-message').textContent = `Công thức hoàn thành! +${bonusPoints} điểm`;
+            document.getElementById('feedback-message').classList.remove('hidden');
+            document.getElementById('feedback-message').className = 'text-center mb-3 text-lg font-bold text-green-600';
+            
+            // Update score display
+            document.getElementById('score-display').textContent = `Điểm: ${gameState.score}`;
+            
+            // Wait before moving to next task
+            setTimeout(() => {
+                document.getElementById('feedback-message').classList.add('hidden');
+                moveToNextTask();
+            }, 2000);
+        };
+        
+        // Start pouring an ingredient
+        const startPour = (ingredientId) => {
+            if (gameState.isPouring || gameState.currentPourAmount >= gameState.cupCapacity) return;
+            
+            gameState.isPouring = true;
+            
+            // Create pouring animation
+            const pourStream = document.getElementById('pour-stream');
+            pourStream.setAttribute('d', 'M100,0 C100,0 100,40 100,40');
+            pourStream.setAttribute('stroke-width', '5');
+            pourStream.setAttribute('stroke', gameData.ingredients[ingredientId].color);
+            
+            // Start filling animation
+            const fillInterval = setInterval(() => {
+                if (!gameState.isPouring) {
+                    clearInterval(fillInterval);
+                    return;
+                }
+                
+                // Increase pour amount based on pour rate
+                const pourIncrement = 0.01 * gameData.ingredients[ingredientId].pourRate;
+                gameState.currentPourAmount += pourIncrement;
+                
+                // Limit to cup capacity
+                if (gameState.currentPourAmount >= gameState.cupCapacity) {
+                    gameState.currentPourAmount = gameState.cupCapacity;
+                    gameState.hasSpilled = true;
+                    stopPour();
+                    clearInterval(fillInterval);
+                    
+                    // Show splash effect
+                    const splashCircle = document.getElementById('splash-circle');
+                    splashCircle.setAttribute('cy', '40');
+                    splashCircle.setAttribute('r', '5');
+                    splashCircle.setAttribute('fill', 'rgba(96, 165, 250, 0.7)');
+                    
+                    // Animate splash
+                    let splashSize = 5;
+                    let splashOpacity = 0.7;
+                    const splashInterval = setInterval(() => {
+                        splashSize += 1;
+                        splashOpacity -= 0.1;
+                        
+                        splashCircle.setAttribute('r', String(splashSize));
+                        splashCircle.setAttribute('fill', `rgba(96, 165, 250, ${splashOpacity})`);
+                        
+                        if (splashOpacity <= 0) {
+                            clearInterval(splashInterval);
+                            splashCircle.setAttribute('r', '0');
+                        }
+                    }, 50);
+                }
+                
+                // Update liquid level
+                updateLiquidLevel();
+                
+            }, 50);
+            
+            // Show confirm button after start pouring
+            document.getElementById('confirm-pour').classList.remove('hidden');
+        };
+        
+        // Stop pouring
+        const stopPour = () => {
+            if (!gameState.isPouring) return;
+            
+            gameState.isPouring = false;
+            
+            // Hide pour stream
+            const pourStream = document.getElementById('pour-stream');
+            pourStream.setAttribute('stroke-width', '0');
+            
+            // Calculate accuracy
+            calculateAccuracy();
+            
+            // Show accuracy meter
+            document.getElementById('accuracy-meter').classList.remove('hidden');
+        };
+        
+        // Reset pour state
+        const resetPour = () => {
+            gameState.currentPourAmount = 0;
+            gameState.isPouring = false;
+            
+            // Reset liquid level
+            updateLiquidLevel();
+            
+            // Hide confirm button and accuracy meter
+            document.getElementById('confirm-pour').classList.add('hidden');
+            document.getElementById('accuracy-meter').classList.add('hidden');
+            
+            // Hide pour stream
+            const pourStream = document.getElementById('pour-stream');
+            pourStream.setAttribute('stroke-width', '0');
+        };
+        
+        // Update liquid level in the cup
+        const updateLiquidLevel = () => {
+            const liquidPath = document.getElementById('liquid-path');
+            
+            // Calculate y position based on current amount (inverse because SVG y=0 is at top)
+            const yPos = 230 - (gameState.currentPourAmount * 190);
+            
+            // Update liquid path
+            liquidPath.setAttribute('d', `M45,230 L155,230 L155,${yPos} L45,${yPos} Z`);
+            liquidPath.setAttribute('fill', gameState.currentIngredientColor || '#a8d5ff');
+        };
+        
+        // Calculate accuracy of the pour
+        const calculateAccuracy = () => {
+            const difference = Math.abs(gameState.currentPourAmount - gameState.targetAmount);
+            const maxDifference = gameState.targetAmount; // Maximum possible error (complete miss)
+            
+            // Calculate accuracy as percentage
+            gameState.accuracy = 100 - (difference / maxDifference * 100);
+            
+            // Clamp accuracy to 0-100
+            gameState.accuracy = Math.max(0, Math.min(100, gameState.accuracy));
+            
+            // Round to nearest integer
+            gameState.accuracy = Math.round(gameState.accuracy);
+            
+            // Update accuracy meter
+            document.getElementById('accuracy-bar').style.width = `${gameState.accuracy}%`;
+            document.getElementById('accuracy-value').textContent = `${gameState.accuracy}%`;
+            
+            // Set color based on accuracy
+            if (gameState.accuracy >= 90) {
+                document.getElementById('accuracy-bar').style.backgroundColor = '#10B981'; // Green
+            } else if (gameState.accuracy >= 70) {
+                document.getElementById('accuracy-bar').style.backgroundColor = '#F59E0B'; // Yellow
+            } else {
+                document.getElementById('accuracy-bar').style.backgroundColor = '#EF4444'; // Red
+            }
+        };
+        
+        // Confirm the current pour
+        const confirmPour = () => {
+            // Increment total pours stat
+            gameState.totalPours++;
+            gameState.playerStats.totalPours++;
+            
+            // Check if pour was perfect
+            if (gameState.accuracy >= 95) {
+                gameState.perfectStreak++;
+                gameState.perfectPours++;
+                gameState.playerStats.perfectPours++;
+            } else {
+                gameState.perfectStreak = 0;
+            }
+            
+            // Handle different level types
+            if (gameState.currentSpecialLevel === 'recipe') {
+                confirmRecipePour();
+            } else if (gameState.currentSpecialLevel === 'compare') {
+                confirmComparePour();
+            } else {
+                // Regular level
+                document.getElementById('feedback-message').classList.remove('hidden');
+                
+                // Award points based on accuracy
+                let points = 0;
+                if (gameState.accuracy >= 95) {
+                    points = Math.round(gameData.levels.find(l => l.id === gameState.currentLevel).tasks[gameState.currentTask].points * 1.5);
+                    document.getElementById('feedback-message').textContent = 'Tuyệt vời!';
+                    document.getElementById('feedback-message').className = 'text-center mb-3 text-lg font-bold text-green-600';
+                } else if (gameState.accuracy >= 80) {
+                    points = Math.round(gameData.levels.find(l => l.id === gameState.currentLevel).tasks[gameState.currentTask].points * 1.0);
+                    document.getElementById('feedback-message').textContent = 'Tốt!';
+                    document.getElementById('feedback-message').className = 'text-center mb-3 text-lg font-bold text-blue-600';
+                } else if (gameState.accuracy >= 60) {
+                    points = Math.round(gameData.levels.find(l => l.id === gameState.currentLevel).tasks[gameState.currentTask].points * 0.7);
+                    document.getElementById('feedback-message').textContent = 'Tạm được!';
+                    document.getElementById('feedback-message').className = 'text-center mb-3 text-lg font-bold text-yellow-600';
+                } else {
+                    points = Math.round(gameData.levels.find(l => l.id === gameState.currentLevel).tasks[gameState.currentTask].points * 0.4);
+                    document.getElementById('feedback-message').textContent = 'Cần cải thiện!';
+                    document.getElementById('feedback-message').className = 'text-center mb-3 text-lg font-bold text-red-600';
+                }
+                
+                // Add points to score
+                gameState.score += points;
+                document.getElementById('score-display').textContent = `Điểm: ${gameState.score}`;
+                
+                // Wait before moving to next task
+                setTimeout(() => {
+                    document.getElementById('feedback-message').classList.add('hidden');
+                    moveToNextTask();
+                }, 1500);
+            }
+            
+            // Save game state
+            saveGameState();
+        };
+        
+        // Confirm pour for recipe task
+        const confirmRecipePour = () => {
+            // Find the current ingredient in recipe progress
+            const currentIngredientIndex = gameState.recipeProgress.findIndex(
+                item => !item.completed && item.ingredient === gameState.currentIngredient
+            );
+            
+            if (currentIngredientIndex >= 0) {
+                // Mark ingredient as completed
+                gameState.recipeProgress[currentIngredientIndex].completed = true;
+                gameState.recipeProgress[currentIngredientIndex].accuracy = gameState.accuracy;
+                
+                // Award points based on accuracy
+                let points = 0;
+                if (gameState.accuracy >= 95) {
+                    points = Math.round(gameState.recipeProgress[currentIngredientIndex].points * 1.5);
+                    document.getElementById('feedback-message').textContent = 'Tuyệt vời!';
+                    document.getElementById('feedback-message').className = 'text-center mb-3 text-lg font-bold text-green-600';
+                } else if (gameState.accuracy >= 80) {
+                    points = Math.round(gameState.recipeProgress[currentIngredientIndex].points * 1.0);
+                    document.getElementById('feedback-message').textContent = 'Tốt!';
+                    document.getElementById('feedback-message').className = 'text-center mb-3 text-lg font-bold text-blue-600';
+                } else if (gameState.accuracy >= 60) {
+                    points = Math.round(gameState.recipeProgress[currentIngredientIndex].points * 0.7);
+                    document.getElementById('feedback-message').textContent = 'Tạm được!';
+                    document.getElementById('feedback-message').className = 'text-center mb-3 text-lg font-bold text-yellow-600';
+                } else {
+                    points = Math.round(gameState.recipeProgress[currentIngredientIndex].points * 0.4);
+                    document.getElementById('feedback-message').textContent = 'Cần cải thiện!';
+                    document.getElementById('feedback-message').className = 'text-center mb-3 text-lg font-bold text-red-600';
+                }
+                
+                // Add points to score
+                gameState.score += points;
+                document.getElementById('score-display').textContent = `Điểm: ${gameState.score}`;
+                
+                // Update recipe list UI
+                const ingredientStatuses = document.querySelectorAll('.ingredient-status');
+                if (ingredientStatuses[currentIngredientIndex]) {
+                    if (gameState.accuracy >= 90) {
+                        ingredientStatuses[currentIngredientIndex].innerHTML = '<i class="fas fa-check-circle text-green-500"></i>';
+                    } else if (gameState.accuracy >= 70) {
+                        ingredientStatuses[currentIngredientIndex].innerHTML = '<i class="fas fa-check-circle text-yellow-500"></i>';
+                    } else {
+                        ingredientStatuses[currentIngredientIndex].innerHTML = '<i class="fas fa-check-circle text-red-500"></i>';
+                    }
+                }
+                
+                // Wait before moving to next ingredient
+                setTimeout(() => {
+                    document.getElementById('feedback-message').classList.add('hidden');
+                    document.getElementById('task-container').classList.add('hidden');
+                    document.getElementById('recipe-container').classList.remove('hidden');
+                    
+                    // Check if all ingredients are complete
+                    if (gameState.recipeProgress.every(item => item.completed)) {
+                        completeRecipeTask();
+                    } else {
+                        setTimeout(() => {
+                            setupNextRecipeIngredient();
+                        }, 1000);
+                    }
+                }, 1500);
+            }
+        };
+        
+        // Confirm pour for comparison task
+        const confirmComparePour = () => {
+            // Find the current ingredient in compare progress
+            const currentIngredientIndex = gameState.compareProgress.findIndex(
+                item => !item.completed && item.ingredient === gameState.currentIngredient
+            );
+            
+            if (currentIngredientIndex >= 0) {
+                // Mark ingredient as completed
+                gameState.compareProgress[currentIngredientIndex].completed = true;
+                gameState.compareProgress[currentIngredientIndex].accuracy = gameState.accuracy;
+                
+                // Show feedback
+                document.getElementById('feedback-message').classList.remove('hidden');
+                
+                if (gameState.accuracy >= 90) {
+                    document.getElementById('feedback-message').textContent = 'Tuyệt vời!';
+                    document.getElementById('feedback-message').className = 'text-center mb-3 text-lg font-bold text-green-600';
+                } else if (gameState.accuracy >= 70) {
+                    document.getElementById('feedback-message').textContent = 'Tốt!';
+                    document.getElementById('feedback-message').className = 'text-center mb-3 text-lg font-bold text-blue-600';
+                } else {
+                    document.getElementById('feedback-message').textContent = 'Cần cải thiện!';
+                    document.getElementById('feedback-message').className = 'text-center mb-3 text-lg font-bold text-red-600';
+                }
+                
+                // Wait before moving to next ingredient
+                setTimeout(() => {
+                    document.getElementById('feedback-message').classList.add('hidden');
+                    
+                    // Check if all ingredients are complete
+                    if (gameState.compareProgress.every(item => item.completed)) {
+                        promptComparison();
+                    } else {
+                        setupNextCompareIngredient();
+                    }
+                }, 1500);
+            }
+        };
+        
+        // Move to the next task
+        const moveToNextTask = () => {
+            gameState.currentTask++;
+            
+            // Check if level is complete
+            if (gameState.currentTask >= gameState.taskCount) {
+                completeLevel();
+                return;
+            }
+            
+            // Update task counter
+            document.getElementById('task-counter').textContent = `Nhiệm vụ: ${gameState.currentTask + 1}/${gameState.taskCount}`;
+            
+            // Setup next task based on level type
+            if (gameState.currentSpecialLevel === 'recipe') {
+                // Recipe level always has only one task (multiple ingredients)
+                setupRecipeTask(gameData.specialLevels.recipe.tasks[0]);
+            } else if (gameState.currentSpecialLevel === 'compare') {
+                // Setup next comparison task
+                setupCompareTask(gameData.specialLevels.compare.tasks[gameState.currentTask]);
+            } else {
+                // Regular level
+                setupTask(gameData.levels.find(l => l.id === gameState.currentLevel).tasks[gameState.currentTask]);
+            }
+        };
+        
+        // Start the level timer
+        const startTimer = () => {
+            if (gameState.timer) {
+                clearInterval(gameState.timer);
+            }
+            
+            gameState.timer = setInterval(() => {
+                if (gameState.timeLeft <= 0) {
+                    clearInterval(gameState.timer);
+                    gameState.timer = null;
+                    // Time's up - complete level
+                    completeLevel();
+                    return;
+                }
+                
+                gameState.timeLeft--;
+                gameState.playerStats.playTime++;
+                document.getElementById('time-display').textContent = `Thời gian: ${gameState.timeLeft}s`;
+                
+                // Change color when time is running out
+                if (gameState.timeLeft <= 10) {
+                    document.getElementById('time-display').className = 'font-bold text-red-700';
+                }
+            }, 1000);
+        };
+        
+        // Complete the current level
+        const completeLevel = () => {
+            // Stop timer
+            if (gameState.timer) {
+                clearInterval(gameState.timer);
+                gameState.timer = null;
+            }
+            
+            // Add to player's total score
+            gameState.playerStats.totalScore += gameState.score;
+            
+            // Calculate stars based on completion criteria
+            let stars = 0;
+            const level = gameState.currentSpecialLevel 
+                ? gameData.specialLevels[gameState.currentSpecialLevel]
+                : gameData.levels.find(l => l.id === gameState.currentLevel);
+            
+            const maxScore = level.maxTasks * 150; // Approximate max score
+            const percentScore = (gameState.score / maxScore) * 100;
+            
+            if (percentScore >= 90) stars = 3;
+            else if (percentScore >= 70) stars = 2;
+            else if (percentScore >= 50) stars = 1;
+            
+            // Update stars in UI
+            document.getElementById('star1').className = `w-8 h-8 ${stars >= 1 ? 'text-yellow-400' : 'text-gray-300'}`;
+            document.getElementById('star2').className = `w-8 h-8 ${stars >= 2 ? 'text-yellow-400' : 'text-gray-300'}`;
+            document.getElementById('star3').className = `w-8 h-8 ${stars >= 3 ? 'text-yellow-400' : 'text-gray-300'}`;
+            
+            document.getElementById('stars-message').textContent = `Đạt ${stars}/3 sao!`;
+            
+            // Update level completion data
+            if (gameState.currentSpecialLevel) {
+                // Special level
+                const existingLevel = gameState.specialLevelsCompleted.findIndex(l => l.id === gameState.currentSpecialLevel);
+                
+                if (existingLevel >= 0) {
+                    // Update if score is higher
+                    if (gameState.score > gameState.specialLevelsCompleted[existingLevel].score) {
+                        gameState.specialLevelsCompleted[existingLevel].score = gameState.score;
+                        gameState.specialLevelsCompleted[existingLevel].stars = stars;
+                        gameState.specialLevelsCompleted[existingLevel].accuracy = gameState.accuracy;
+                        gameState.specialLevelsCompleted[existingLevel].time = level.timeLimit - gameState.timeLeft;
+                    }
+                } else {
+                    // Add new completion
+                    gameState.specialLevelsCompleted.push({
+                        id: gameState.currentSpecialLevel,
+                        score: gameState.score,
+                        stars: stars,
+                        accuracy: gameState.accuracy,
+                        time: level.timeLimit - gameState.timeLeft
+                    });
+                }
+                
+                // Check for recipe expert achievement
+                if (gameState.currentSpecialLevel === 'recipe' && stars === 3) {
+                    gameState.specialRecipe = 1;
+                }
+            } else {
+                // Regular level
+                const existingLevel = gameState.levelsCompleted.findIndex(l => l.id === gameState.currentLevel);
+                
+                if (existingLevel >= 0) {
+                    // Update if score is higher
+                    if (gameState.score > gameState.levelsCompleted[existingLevel].score) {
+                        gameState.levelsCompleted[existingLevel].score = gameState.score;
+                        gameState.levelsCompleted[existingLevel].stars = stars;
+                        gameState.levelsCompleted[existingLevel].accuracy = gameState.accuracy;
+                        gameState.levelsCompleted[existingLevel].time = level.timeLimit - gameState.timeLeft;
+                    }
+                } else {
+                    // Add new completion
+                    gameState.levelsCompleted.push({
+                        id: gameState.currentLevel,
+                        score: gameState.score,
+                        stars: stars,
+                        accuracy: gameState.accuracy,
+                        time: level.timeLimit - gameState.timeLeft
+                    });
+                }
+            }
+            
+            // Check for time challenge achievement
+            if ((level.timeLimit - gameState.timeLeft) <= 30 && gameState.taskCount >= 5) {
+                gameState.timeChallengeCompleted++;
+            }
+            
+            // Check for no spill achievement
+            if (!gameState.hasSpilled) {
+                gameState.noSpillLevels++;
+            }
+            
+            // Check for three stars achievement
+            if (stars === 3) {
+                gameState.threeStarLevels++;
+            }
+            
+            // Update level completion results
+            document.getElementById('final-score').textContent = gameState.score;
+            document.getElementById('final-accuracy').textContent = `${gameState.accuracy}%`;
+            
+            // Check for newly unlocked achievements
+            const unlockedAchievement = checkNewAchievements();
+            if (unlockedAchievement) {
+                document.getElementById('achievement-unlocked').classList.remove('hidden');
+                document.getElementById('new-achievement-name').textContent = unlockedAchievement.name;
+                document.getElementById('new-achievement-desc').textContent = unlockedAchievement.description;
+            } else {
+                document.getElementById('achievement-unlocked').classList.add('hidden');
+            }
+            
+            // Customize completion message
+            let completionMessage = '';
+            if (stars === 3) {
+                completionMessage = 'Xuất sắc! Bạn thật tài năng!';
+            } else if (stars === 2) {
+                completionMessage = 'Tốt lắm! Tiếp tục phát huy nhé!';
+            } else if (stars === 1) {
+                completionMessage = 'Hoàn thành! Hãy luyện tập thêm nhé!';
+            } else {
+                completionMessage = 'Hãy thử lại để đạt kết quả tốt hơn!';
+            }
+            document.getElementById('level-complete-message').textContent = completionMessage;
+            
+            // Update next level button visibility
+            const currentLevelIndex = gameData.levels.findIndex(l => l.id === gameState.currentLevel);
+            if (gameState.currentSpecialLevel || currentLevelIndex >= gameData.levels.length - 1) {
+                document.getElementById('next-level').classList.add('hidden');
+            } else {
+                document.getElementById('next-level').classList.remove('hidden');
+            }
+            
+            // Save game state
+            saveGameState();
+            
+            // Show level complete screen
+            showScreen('level-complete-screen');
+        };
+        
+        // Check for newly unlocked achievements
+        const checkNewAchievements = () => {
+            // Load previous achievements
+            const savedState = localStorage.getItem('dongDoThanSauAchievements') || '[]';
+            const previousAchievements = JSON.parse(savedState);
+            
+            // Check each achievement
+            for (const achievement of gameData.achievements) {
+                let progress = 0;
+                let isUnlocked = false;
+                
+                // Check if achievement is unlocked
+                switch (achievement.condition) {
+                    case 'perfectPours':
+                        progress = gameState.perfectStreak;
+                        isUnlocked = progress >= achievement.target;
+                        break;
+                    case 'timeChallenges':
+                        progress = gameState.timeChallengeCompleted;
+                        isUnlocked = progress >= achievement.target;
+                        break;
+                    case 'noSpill':
+                        progress = gameState.noSpillLevels;
+                        isUnlocked = progress >= achievement.target;
+                        break;
+                    case 'levelsCompleted':
+                        progress = gameState.levelsCompleted.length;
+                        isUnlocked = progress >= achievement.target;
+                        break;
+                    case 'threeStars':
+                        progress = gameState.threeStarLevels;
+                        isUnlocked = progress >= achievement.target;
+                        break;
+                    case 'specialRecipe':
+                        const recipeCompleted = gameState.specialLevelsCompleted.find(l => l.id === 'recipe');
+                        progress = recipeCompleted && recipeCompleted.stars === 3 ? 1 : 0;
+                        isUnlocked = progress >= achievement.target;
+                        break;
+                }
+                
+                // If newly unlocked
+                if (isUnlocked && !previousAchievements.includes(achievement.id)) {
+                    previousAchievements.push(achievement.id);
+                    localStorage.setItem('dongDoThanSauAchievements', JSON.stringify(previousAchievements));
+                    return achievement;
+                }
+            }
+            
+            return null;
+        };
+        
+        // Initialize the game
+        window.onload = initGame;
+    </script>
+</body>
+</html>

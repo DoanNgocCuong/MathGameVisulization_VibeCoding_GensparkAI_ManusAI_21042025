@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đầu Bếp Phân Số - Fraction Chef Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f5f5f5;
+            overflow: hidden;
+        }
+        
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background-color: #fff8e1;
+        }
+        
+        #kitchen-area {
+            position: relative;
+            width: 100%;
+            height: 70%;
+            background-color: #ffecb3;
+            border-bottom: 4px solid #e6b800;
+        }
+        
+        #counter-top {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 30%;
+            background-color: #d7ccc8;
+            border-top: 4px solid #a1887f;
+        }
+        
+        #recipe-area {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 250px;
+            height: 300px;
+            background-color: #ffffff;
+            border: 2px solid #795548;
+            border-radius: 5px;
+            padding: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            z-index: 10;
+        }
+        
+        #ingredients-area {
+            position: absolute;
+            bottom: 10px;
+            width: 100%;
+            height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .ingredient {
+            width: 80px;
+            height: 80px;
+            cursor: grab;
+            user-select: none;
+            transition: transform 0.2s;
+        }
+        
+        .ingredient:hover {
+            transform: scale(1.1);
+        }
+        
+        .ingredient:active {
+            cursor: grabbing;
+        }
+        
+        #tools-area {
+            position: absolute;
+            left: 10px;
+            top: 10px;
+            width: 80px;
+            height: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
+            background-color: rgba(255, 255, 255, 0.7);
+            border-radius: 5px;
+            padding: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .tool {
+            width: 60px;
+            height: 60px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .tool:hover {
+            transform: scale(1.1);
+        }
+        
+        #workspace {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 500px;
+            height: 300px;
+            background-color: #f5f5f5;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        #fraction-display {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 300px;
+            height: 80px;
+            background-color: white;
+            border: 2px solid #4caf50;
+            border-radius: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        #controls {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        
+        .btn:hover {
+            background-color: #388e3c;
+        }
+        
+        .btn:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        
+        #feedback-message {
+            position: absolute;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 20px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            font-size: 18px;
+            opacity: 0;
+            transition: opacity 0.5s;
+            max-width: 80%;
+            z-index: 20;
+        }
+        
+        .success {
+            color: #4caf50;
+        }
+        
+        .error {
+            color: #f44336;
+        }
+        
+        .hint {
+            color: #2196f3;
+        }
+        
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        
+        .modal-content {
+            width: 80%;
+            max-width: 600px;
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .modal-title {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #4caf50;
+        }
+        
+        #modal-text {
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+        
+        #modal-button {
+            padding: 10px 20px;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            float: right;
+        }
+        
+        /* SVG Styles */
+        .fraction-svg {
+            width: 100px;
+            height: 100px;
+        }
+        
+        .measuring-cup {
+            fill: rgba(173, 216, 230, 0.7);
+            stroke: #2196f3;
+            stroke-width: 2;
+        }
+        
+        .liquid {
+            fill: rgba(255, 152, 0, 0.8);
+            transition: height 0.5s;
+        }
+        
+        .measurement-line {
+            stroke: #333;
+            stroke-width: 1;
+        }
+        
+        .measurement-text {
+            font-size: 12px;
+            fill: #333;
+        }
+        
+        .knife {
+            fill: #e0e0e0;
+            stroke: #9e9e9e;
+            stroke-width: 1;
+        }
+        
+        .knife-blade {
+            fill: #bdbdbd;
+        }
+        
+        .food-item {
+            transition: all 0.3s;
+        }
+        
+        .cutting-line {
+            stroke: #f44336;
+            stroke-width: 2;
+            stroke-dasharray: 5;
+            opacity: 0.7;
+        }
+        
+        @media (max-width: 768px) {
+            #recipe-area {
+                width: 200px;
+                height: 250px;
+            }
+            
+            #workspace {
+                width: 90%;
+                height: 250px;
+            }
+            
+            .ingredient, .tool {
+                width: 50px;
+                height: 50px;
+            }
+            
+            #tools-area {
+                width: 70px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="kitchen-area">
+            <div id="counter-top"></div>
+            
+            <div id="workspace">
+                <!-- This is where the main interaction happens -->
+                <svg id="workspace-svg" width="100%" height="100%">
+                    <!-- SVG elements will be added dynamically -->
+                </svg>
+            </div>
+            
+            <div id="fraction-display">
+                <div id="current-fraction">1 ÷ 2 = 1/2</div>
+            </div>
+            
+            <div id="feedback-message"></div>
+            
+            <div id="recipe-area">
+                <h3>Recipe Challenge</h3>
+                <p>Divide the ingredients according to the recipe:</p>
+                <ul id="recipe-list">
+                    <li>Divide 1 cup of flour by 2</li>
+                    <li>Divide 3/4 cup of milk by 1/2</li>
+                    <li>Divide 2 eggs by 4</li>
+                </ul>
+                <div id="recipe-progress">
+                    Challenge: <span id="current-challenge">1</span>/3
+                </div>
+            </div>
+            
+            <div id="tools-area">
+                <!-- Tool SVGs will be added here -->
+            </div>
+            
+            <div id="ingredients-area">
+                <!-- Ingredient SVGs will be added here -->
+            </div>
+            
+            <div id="controls">
+                <button id="check-btn" class="btn">Check Answer</button>
+                <button id="next-btn" class="btn">Next Challenge</button>
+                <button id="help-btn" class="btn">Hint</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="modal-overlay" class="modal-overlay">
+        <div id="modal-content" class="modal-content">
+            <h2 id="modal-title" class="modal-title">Welcome to Đầu Bếp Phân Số!</h2>
+            <div id="modal-text">Learn about dividing fractions by helping in the kitchen. Follow the recipe and use the tools to divide ingredients correctly.</div>
+            <button id="modal-button">Start Cooking!</button>
+        </div>
+    </div>
+
+    <script src="svg_assets.js"></script>
+    <script src="game_mechanics.js"></script>
+    <script src="fraction_stages.js"></script>
+</body>
+</html>

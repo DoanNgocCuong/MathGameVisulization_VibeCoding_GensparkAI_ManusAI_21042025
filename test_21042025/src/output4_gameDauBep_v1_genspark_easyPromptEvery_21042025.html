@@ -1,0 +1,1431 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đầu Bếp Phân Số - Game Tương Tác Học Phân Số</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.1/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #FF6B35;
+            --secondary: #4CB944;
+            --accent: #FFD23F;
+            --background: #FFF3E6;
+            --dark: #2E294E;
+        }
+        
+        * {
+            box-sizing: border-box;
+            font-family: 'Nunito', sans-serif;
+        }
+        
+        body {
+            background-color: var(--background);
+            color: var(--dark);
+            overflow-x: hidden;
+        }
+        
+        h1, h2, h3, h4, h5 {
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 700;
+        }
+
+        .game-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chef {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 140px;
+            z-index: 10;
+            animation: bobUpDown 3s infinite ease-in-out;
+        }
+        
+        .speech-bubble {
+            position: absolute;
+            background: white;
+            border-radius: 20px;
+            padding: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            max-width: 300px;
+            right: 150px;
+            bottom: 120px;
+            z-index: 11;
+            border: 3px solid var(--primary);
+        }
+        
+        .speech-bubble:after {
+            content: '';
+            position: absolute;
+            bottom: 15px;
+            right: -20px;
+            border: 10px solid transparent;
+            border-left-color: var(--primary);
+        }
+
+        .kitchen-bg {
+            background-image: url('https://cdn.jsdelivr.net/gh/persources/gamecdn@main/kitchen-bg.svg');
+            background-size: cover;
+            background-position: center;
+            height: 200px;
+            border-radius: 20px 20px 0 0;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-weight: bold;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+            display: inline-block;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(255, 107, 53, 0.3);
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-weight: bold;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+            display: inline-block;
+        }
+        
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(76, 185, 68, 0.3);
+        }
+
+        .ingredient {
+            width: 80px;
+            height: 80px;
+            cursor: grab;
+            transition: all 0.2s;
+            filter: drop-shadow(0 2px 5px rgba(0,0,0,0.2));
+        }
+        
+        .ingredient:hover {
+            transform: scale(1.05);
+        }
+        
+        .ingredient:active {
+            cursor: grabbing;
+            transform: scale(0.95);
+        }
+
+        .measuring-cup {
+            width: 160px;
+            height: 250px;
+            background: rgba(255,255,255,0.8);
+            border: 3px solid var(--dark);
+            border-top: none;
+            border-radius: 0 0 20px 20px;
+            position: relative;
+            overflow: hidden;
+            margin: 0 auto;
+        }
+        
+        .liquid {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 0%;
+            background: rgba(255, 210, 63, 0.8);
+            transition: height 0.5s ease-out;
+        }
+        
+        .measurement-lines {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+        }
+        
+        .measurement-line {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: var(--dark);
+        }
+        
+        .measurement-label {
+            position: absolute;
+            right: -40px;
+            transform: translateY(-50%);
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .pizza {
+            width: 300px;
+            height: 300px;
+            background: #FFCC99;
+            border-radius: 50%;
+            margin: 0 auto;
+            position: relative;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            background-image: url('https://cdn.jsdelivr.net/gh/persources/gamecdn@main/pizza-texture.svg');
+            background-size: cover;
+        }
+        
+        .pizza-topping {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background-color: #FF6347;
+            border-radius: 50%;
+        }
+        
+        .pizza-slice-line {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 50%;
+            height: 2px;
+            background-color: rgba(0,0,0,0.7);
+            transform-origin: left center;
+            transform: rotate(0deg);
+            z-index: 1;
+        }
+        
+        .pizza-slice {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            clip-path: polygon(50% 50%, 50% 0%, 100% 0%, 100% 100%, 50% 100%);
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            transition: background-color 0.3s;
+            transform-origin: center;
+            cursor: pointer;
+        }
+        
+        .pizza-slice.selected {
+            background-color: rgba(255, 107, 53, 0.3);
+        }
+        
+        .fraction-calculator {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-top: 30px;
+        }
+        
+        .recipe-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            border-left: 5px solid var(--accent);
+            transition: all 0.3s;
+        }
+        
+        .recipe-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        
+        .ingredient-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 8px 0;
+            border-bottom: 1px dashed #eee;
+        }
+        
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #ddd;
+            outline: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+        }
+        
+        .serving-control {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        
+        .serving-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--accent);
+            color: var(--dark);
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+        
+        .serving-display {
+            margin: 0 15px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .progress-container {
+            width: 100%;
+            background-color: #e0e0e0;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        
+        .progress-bar {
+            height: 20px;
+            border-radius: 5px;
+            background-color: var(--secondary);
+            width: 0%;
+            transition: width 0.5s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        
+        @keyframes bobUpDown {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+        
+        .celebration {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: var(--primary);
+            opacity: 0;
+        }
+        
+        .star-rating {
+            display: flex;
+            justify-content: center;
+            margin: 15px 0;
+        }
+        
+        .star {
+            font-size: 30px;
+            color: #ccc;
+            margin: 0 5px;
+            cursor: pointer;
+        }
+        
+        .star.active {
+            color: var(--accent);
+        }
+        
+        .tab-button {
+            background: none;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--dark);
+            cursor: pointer;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .tab-button.active {
+            color: var(--primary);
+            border-bottom: 3px solid var(--primary);
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 20px;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .badge {
+            display: inline-block;
+            background-color: var(--accent);
+            color: var(--dark);
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 12px;
+            margin: 5px;
+        }
+        
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: var(--dark);
+            color: white;
+            text-align: center;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+        
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mx-auto px-4 py-8">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-center mb-2" style="color: var(--primary);">
+                <i class="fas fa-utensils mr-2"></i> Đầu Bếp Phân Số
+            </h1>
+            <p class="text-xl">Game Tương Tác Học Phân Số Qua Nấu Ăn</p>
+        </header>
+        
+        <div class="game-container">
+            <div class="kitchen-bg"></div>
+            
+            <div class="p-6">
+                <div class="flex justify-center space-x-4 mb-6">
+                    <button class="tab-button active" data-tab="intro">Giới Thiệu</button>
+                    <button class="tab-button" data-tab="measuring">Đong Đo</button>
+                    <button class="tab-button" data-tab="cutting">Cắt Chia</button>
+                    <button class="tab-button" data-tab="recipe">Công Thức</button>
+                </div>
+                
+                <div id="intro" class="tab-content active">
+                    <div class="bg-white rounded-lg p-6 shadow-md mb-6">
+                        <h2 class="text-2xl font-bold mb-4" style="color: var(--primary);">Chào Mừng Đến Với Nhà Bếp Phân Số!</h2>
+                        <p class="mb-4">Xin chào các đầu bếp tập sự! Tôi là Bếp Trưởng Phân Số, người sẽ hướng dẫn các bạn khám phá thế giới kỳ diệu của phân số thông qua nghệ thuật nấu ăn.</p>
+                        <p class="mb-4">Trong nhà bếp này, chúng ta sẽ học cách đong đo nguyên liệu chính xác, chia thực phẩm thành các phần bằng nhau, và điều chỉnh công thức cho số lượng thực khách khác nhau.</p>
+                        
+                        <div class="flex flex-col md:flex-row gap-6 mt-8">
+                            <div class="bg-gray-100 rounded-lg p-4 flex-1 hover:shadow-md transition-all">
+                                <h3 class="text-xl font-bold mb-2" style="color: var(--secondary);"><i class="fas fa-flask mr-2"></i> Đong Đo Chính Xác</h3>
+                                <p>Học cách đong đo nguyên liệu theo phân số chuẩn xác như một đầu bếp chuyên nghiệp.</p>
+                                <button class="btn-primary mt-4" onclick="switchTab('measuring')">Bắt Đầu Đong Đo</button>
+                            </div>
+                            
+                            <div class="bg-gray-100 rounded-lg p-4 flex-1 hover:shadow-md transition-all">
+                                <h3 class="text-xl font-bold mb-2" style="color: var(--secondary);"><i class="fas fa-pizza-slice mr-2"></i> Cắt Chia Thực Phẩm</h3>
+                                <p>Thực hành chia thực phẩm thành các phần bằng nhau và học cách hiểu phân số trực quan.</p>
+                                <button class="btn-primary mt-4" onclick="switchTab('cutting')">Bắt Đầu Cắt Chia</button>
+                            </div>
+                            
+                            <div class="bg-gray-100 rounded-lg p-4 flex-1 hover:shadow-md transition-all">
+                                <h3 class="text-xl font-bold mb-2" style="color: var(--secondary);"><i class="fas fa-book-open mr-2"></i> Điều Chỉnh Công Thức</h3>
+                                <p>Học cách điều chỉnh lượng nguyên liệu theo phân số khi thay đổi số lượng phần ăn.</p>
+                                <button class="btn-primary mt-4" onclick="switchTab('recipe')">Xem Công Thức</button>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-8 bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500">
+                            <h3 class="text-xl font-bold mb-2 text-blue-700">Tại Sao Phân Số Quan Trọng Trong Nấu Ăn?</h3>
+                            <p>Trong nấu ăn, phân số xuất hiện ở khắp mọi nơi! Từ lượng nguyên liệu (½ thìa muối), thời gian nấu (¾ giờ), đến việc chia thức ăn (⅛ chiếc bánh). Hiểu về phân số giúp bạn trở thành đầu bếp giỏi và áp dụng toán học vào cuộc sống hàng ngày!</p>
+                        </div>
+                    </div>
+                    
+                    <img src="https://cdn.jsdelivr.net/gh/persources/gamecdn@main/chef-character.svg" alt="Bếp Trưởng Phân Số" class="chef">
+                    <div class="speech-bubble">
+                        <p class="font-bold">Hãy chọn một hoạt động ở trên để bắt đầu khám phá phân số qua nấu ăn nhé!</p>
+                    </div>
+                </div>
+                
+                <div id="measuring" class="tab-content">
+                    <div class="bg-white rounded-lg p-6 shadow-md mb-6">
+                        <h2 class="text-2xl font-bold mb-4" style="color: var(--primary);">Thử Thách Đong Đo</h2>
+                        <p class="mb-6">Hãy đong đúng lượng chất lỏng theo yêu cầu bằng cách kéo thanh trượt bên dưới. Quan sát mức chất lỏng trong cốc đo và các vạch chia phân số.</p>
+                        
+                        <div class="target-fraction bg-yellow-100 p-4 rounded-lg text-center mb-4">
+                            <h3 class="text-xl mb-2">Mục Tiêu Hiện Tại:</h3>
+                            <div class="fraction-target text-3xl font-bold" style="color: var(--primary);">2/3 cup</div>
+                        </div>
+                        
+                        <div class="flex flex-col md:flex-row gap-6 items-center">
+                            <div class="flex-1">
+                                <div class="measuring-cup mx-auto">
+                                    <div class="liquid"></div>
+                                    <div class="measurement-lines">
+                                        <div class="measurement-line" style="bottom: 0%;">
+                                            <span class="measurement-label">0</span>
+                                        </div>
+                                        <div class="measurement-line" style="bottom: 25%;">
+                                            <span class="measurement-label">1/4</span>
+                                        </div>
+                                        <div class="measurement-line" style="bottom: 33.33%;">
+                                            <span class="measurement-label">1/3</span>
+                                        </div>
+                                        <div class="measurement-line" style="bottom: 50%;">
+                                            <span class="measurement-label">1/2</span>
+                                        </div>
+                                        <div class="measurement-line" style="bottom: 66.67%;">
+                                            <span class="measurement-label">2/3</span>
+                                        </div>
+                                        <div class="measurement-line" style="bottom: 75%;">
+                                            <span class="measurement-label">3/4</span>
+                                        </div>
+                                        <div class="measurement-line" style="bottom: 100%;">
+                                            <span class="measurement-label">1</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-center mt-6">
+                                    <div class="inline-block relative">
+                                        <span class="block mb-2">Kéo để điều chỉnh lượng chất lỏng</span>
+                                        <input type="range" min="0" max="100" value="0" class="liquid-control">
+                                        <div class="current-value mt-2 text-lg font-bold">0%</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex-1 bg-gray-50 p-4 rounded-lg">
+                                <h3 class="text-xl font-bold mb-4" style="color: var(--secondary);">Kiến Thức Phân Số</h3>
+                                <p class="mb-2">Các vạch chia trên cốc đo biểu thị các phân số khác nhau:</p>
+                                <ul class="list-disc pl-5 mb-4">
+                                    <li><strong>1/4</strong> - Một phần tư cốc</li>
+                                    <li><strong>1/3</strong> - Một phần ba cốc</li>
+                                    <li><strong>1/2</strong> - Một nửa cốc</li>
+                                    <li><strong>2/3</strong> - Hai phần ba cốc</li>
+                                    <li><strong>3/4</strong> - Ba phần tư cốc</li>
+                                </ul>
+                                <p>Khi so sánh phân số, phân số có giá trị lớn hơn sẽ nằm cao hơn trên cốc đo.</p>
+                                <div class="fraction-comparison mt-4 p-3 bg-white rounded border-l-4 border-blue-500">
+                                    <p><strong>Ví dụ:</strong> 2/3 > 1/2 vì 2/3 ≈ 0.67 và 1/2 = 0.5</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-8 text-center">
+                            <button class="btn-primary check-measurement">Kiểm Tra Đong Đo</button>
+                            <button class="btn-secondary ml-4 new-measurement-target">Mục Tiêu Mới</button>
+                        </div>
+                        
+                        <div class="feedback mt-6 text-center hidden">
+                            <div class="success-message text-green-600 text-xl font-bold hidden">
+                                <i class="fas fa-check-circle mr-2"></i> Tuyệt vời! Bạn đã đong chính xác.
+                            </div>
+                            <div class="error-message text-red-600 text-xl font-bold hidden">
+                                <i class="fas fa-times-circle mr-2"></i> Chưa đúng! Hãy thử lại.
+                            </div>
+                            <div class="hint-message text-blue-600 mt-2 hidden">
+                                <span class="hint-text"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="cutting" class="tab-content">
+                    <div class="bg-white rounded-lg p-6 shadow-md mb-6">
+                        <h2 class="text-2xl font-bold mb-4" style="color: var(--primary);">Thử Thách Cắt Chia</h2>
+                        <p class="mb-6">Hãy chia chiếc bánh pizza thành các phần bằng nhau và chọn đúng số phần được yêu cầu. Bạn sẽ học cách biểu diễn phân số qua hình ảnh trực quan.</p>
+                        
+                        <div class="target-fraction bg-yellow-100 p-4 rounded-lg text-center mb-4">
+                            <h3 class="text-xl mb-2">Mục Tiêu Hiện Tại:</h3>
+                            <div class="pizza-target text-3xl font-bold" style="color: var(--primary);">Chọn 3/8 pizza</div>
+                        </div>
+                        
+                        <div class="flex flex-col md:flex-row gap-6 items-center">
+                            <div class="flex-1">
+                                <div class="text-center mb-4">
+                                    <button class="btn-secondary slice-pizza" data-slices="2">2 phần</button>
+                                    <button class="btn-secondary ml-2 slice-pizza" data-slices="4">4 phần</button>
+                                    <button class="btn-secondary ml-2 slice-pizza" data-slices="8">8 phần</button>
+                                </div>
+                                
+                                <div class="pizza-container relative">
+                                    <div class="pizza" id="pizza">
+                                        <!-- Pizza slices will be added here dynamically -->
+                                    </div>
+                                </div>
+                                
+                                <div class="text-center mt-4">
+                                    <div class="selected-slices-info text-lg">
+                                        <span class="selected-count">0</span> /
+                                        <span class="total-count">8</span> phần
+                                        = <span class="current-fraction">0/8</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex-1 bg-gray-50 p-4 rounded-lg">
+                                <h3 class="text-xl font-bold mb-4" style="color: var(--secondary);">Kiến Thức Phân Số</h3>
+                                <p class="mb-2">Khi chia thực phẩm:</p>
+                                <ul class="list-disc pl-5 mb-4">
+                                    <li>Mẫu số (số dưới) cho biết tổng số phần được chia</li>
+                                    <li>Tử số (số trên) cho biết số phần được chọn</li>
+                                </ul>
+                                <p class="mb-2">Ví dụ: <strong>3/8</strong> nghĩa là:</p>
+                                <ul class="list-disc pl-5 mb-4">
+                                    <li>Chia pizza thành <strong>8</strong> phần bằng nhau</li>
+                                    <li>Chọn <strong>3</strong> trong số đó</li>
+                                </ul>
+                                <div class="fraction-equivalence mt-4 p-3 bg-white rounded border-l-4 border-purple-500">
+                                    <p><strong>Phân số tương đương:</strong> 1/4 = 2/8, 1/2 = 4/8, 3/4 = 6/8</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-8 text-center">
+                            <button class="btn-primary check-pizza-slices">Kiểm Tra Lựa Chọn</button>
+                            <button class="btn-secondary ml-4 new-pizza-target">Mục Tiêu Mới</button>
+                        </div>
+                        
+                        <div class="pizza-feedback mt-6 text-center hidden">
+                            <div class="pizza-success-message text-green-600 text-xl font-bold hidden">
+                                <i class="fas fa-check-circle mr-2"></i> Tuyệt vời! Bạn đã chọn chính xác.
+                            </div>
+                            <div class="pizza-error-message text-red-600 text-xl font-bold hidden">
+                                <i class="fas fa-times-circle mr-2"></i> Chưa đúng! Hãy thử lại.
+                            </div>
+                            <div class="pizza-hint-message text-blue-600 mt-2 hidden">
+                                <span class="pizza-hint-text"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="recipe" class="tab-content">
+                    <div class="bg-white rounded-lg p-6 shadow-md mb-6">
+                        <h2 class="text-2xl font-bold mb-4" style="color: var(--primary);">Điều Chỉnh Công Thức</h2>
+                        <p class="mb-6">Bây giờ bạn sẽ học cách điều chỉnh lượng nguyên liệu theo phân số khi số lượng người ăn thay đổi. Kéo thanh trượt hoặc nhấn các nút +/- để thay đổi số lượng phần ăn.</p>
+                        
+                        <div class="recipe-card mb-6">
+                            <div class="flex justify-between items-center">
+                                <h3 class="text-xl font-bold" style="color: var(--primary);">Bánh Chocolate Chip Cookies</h3>
+                                <span class="badge">Cơ Bản</span>
+                            </div>
+                            
+                            <div class="serving-control">
+                                <button class="serving-btn decrease-serving">-</button>
+                                <div class="serving-display"><span id="serving-count">4</span> người</div>
+                                <button class="serving-btn increase-serving">+</button>
+                            </div>
+                            
+                            <p class="text-sm text-gray-600 mb-4">Công thức gốc cho 4 người. Kéo thanh trượt để điều chỉnh.</p>
+                            <input type="range" min="1" max="10" value="4" class="serving-slider">
+                            
+                            <div class="ingredients-list mt-6">
+                                <h4 class="font-bold mb-2">Nguyên Liệu:</h4>
+                                
+                                <div class="ingredient-item">
+                                    <span>Bột mì:</span>
+                                    <strong><span class="flour-amount">2</span> cup</strong>
+                                </div>
+                                
+                                <div class="ingredient-item">
+                                    <span>Đường:</span>
+                                    <strong><span class="sugar-amount">3/4</span> cup</strong>
+                                </div>
+                                
+                                <div class="ingredient-item">
+                                    <span>Bơ:</span>
+                                    <strong><span class="butter-amount">1/2</span> cup</strong>
+                                </div>
+                                
+                                <div class="ingredient-item">
+                                    <span>Chocolate chip:</span>
+                                    <strong><span class="chocolate-amount">1 1/2</span> cup</strong>
+                                </div>
+                                
+                                <div class="ingredient-item">
+                                    <span>Trứng:</span>
+                                    <strong><span class="egg-amount">2</span></strong>
+                                </div>
+                                
+                                <div class="ingredient-item">
+                                    <span>Vani:</span>
+                                    <strong><span class="vanilla-amount">1/4</span> thìa cà phê</strong>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="fraction-calculator">
+                            <h3 class="text-xl font-bold mb-4" style="color: var(--secondary);">Máy Tính Phân Số</h3>
+                            <p class="mb-4">Khi thay đổi số phần ăn, chúng ta phải nhân/chia phân số với một hệ số:</p>
+                            
+                            <div class="flex flex-col md:flex-row gap-4 items-center">
+                                <div class="flex-1 bg-gray-50 p-3 rounded">
+                                    <h4 class="font-bold mb-2">Công Thức</h4>
+                                    <p>Lượng mới = Lượng gốc × (Người mới ÷ Người gốc)</p>
+                                    <div class="formula-example mt-2 p-2 bg-white rounded">
+                                        <p>Ví dụ: <span class="example-calculation">2 cup × (6 ÷ 4) = 2 cup × 1.5 = 3 cup</span></p>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex-1 bg-gray-50 p-3 rounded">
+                                    <h4 class="font-bold mb-2">Phép Chia Phân Số</h4>
+                                    <p>Khi chia phân số:</p>
+                                    <ul class="list-disc pl-5">
+                                        <li>Đổi phân số thứ hai thành phân số nghịch đảo</li>
+                                        <li>Sau đó nhân hai phân số với nhau</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            
+                            <div class="calculator-example mt-6 p-4 bg-blue-50 rounded-lg">
+                                <h4 class="font-bold mb-2">Ví Dụ Tính Toán</h4>
+                                <p class="calculator-explanation">
+                                    Đổi từ 4 người lên 6 người:<br>
+                                    Hệ số điều chỉnh = 6 ÷ 4 = 1.5<br>
+                                    Lượng đường mới = 3/4 cup × 1.5 = 9/8 cup = 1 1/8 cup
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-8 text-center">
+                            <button class="btn-primary recipe-quiz">Kiểm Tra Kiến Thức</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="celebration" id="celebration"></div>
+        
+        <div class="bg-white rounded-lg p-6 shadow-md mt-8">
+            <h2 class="text-2xl font-bold mb-4" style="color: var(--primary);">Bạn Đã Học Được Gì?</h2>
+            
+            <div class="progress-container">
+                <div class="progress-bar" style="width: 0%">0%</div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h3 class="text-lg font-bold mb-2" style="color: var(--secondary);">Kiến Thức Phân Số</h3>
+                    <ul class="list-disc pl-5">
+                        <li>Hiểu khái niệm tử số và mẫu số</li>
+                        <li>So sánh giá trị các phân số</li>
+                        <li>Nhận biết phân số tương đương</li>
+                    </ul>
+                </div>
+                
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h3 class="text-lg font-bold mb-2" style="color: var(--secondary);">Kỹ Năng Thực Hành</h3>
+                    <ul class="list-disc pl-5">
+                        <li>Đong đo chính xác theo phân số</li>
+                        <li>Chia đều thực phẩm thành các phần</li>
+                        <li>Điều chỉnh công thức theo tỷ lệ</li>
+                    </ul>
+                </div>
+                
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h3 class="text-lg font-bold mb-2" style="color: var(--secondary);">Ứng Dụng Thực Tế</h3>
+                    <ul class="list-disc pl-5">
+                        <li>Nấu ăn theo công thức</li>
+                        <li>Chia thức ăn công bằng</li>
+                        <li>Tính toán các tỷ lệ trong đời sống</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="mt-8">
+                <h3 class="text-xl font-bold mb-3">Đánh Giá Trải Nghiệm</h3>
+                <p class="mb-4">Bạn thấy trải nghiệm học phân số qua nấu ăn như thế nào?</p>
+                
+                <div class="star-rating">
+                    <span class="star" data-rating="1"><i class="fas fa-star"></i></span>
+                    <span class="star" data-rating="2"><i class="fas fa-star"></i></span>
+                    <span class="star" data-rating="3"><i class="fas fa-star"></i></span>
+                    <span class="star" data-rating="4"><i class="fas fa-star"></i></span>
+                    <span class="star" data-rating="5"><i class="fas fa-star"></i></span>
+                </div>
+                
+                <div class="text-center mt-4">
+                    <button class="btn-primary submit-rating">Gửi Đánh Giá</button>
+                </div>
+            </div>
+        </div>
+        
+        <footer class="mt-8 text-center text-gray-600 pb-8">
+            <p>Đầu Bếp Phân Số - Game Tương Tác Học Phân Số Qua Nấu Ăn</p>
+            <p class="mt-2">© 2023 - Tất cả các quyền được bảo lưu</p>
+        </footer>
+    </div>
+    
+    <script>
+        // Tab Switching Logic
+        function switchTab(tabId) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Deactivate all tab buttons
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active');
+            });
+            
+            // Show selected tab content
+            document.getElementById(tabId).classList.add('active');
+            
+            // Activate selected tab button
+            document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+            
+            // Update progress based on tabs visited
+            updateProgress();
+        }
+        
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const tabId = e.target.getAttribute('data-tab');
+                switchTab(tabId);
+            });
+        });
+        
+        // Measuring Cup Interaction
+        const liquidControl = document.querySelector('.liquid-control');
+        const liquid = document.querySelector('.liquid');
+        const currentValue = document.querySelector('.current-value');
+        
+        liquidControl.addEventListener('input', (e) => {
+            const value = e.target.value;
+            liquid.style.height = `${value}%`;
+            currentValue.textContent = `${value}%`;
+            
+            // Hide feedback when user adjusts the slider
+            document.querySelector('.feedback').classList.add('hidden');
+            document.querySelector('.success-message').classList.add('hidden');
+            document.querySelector('.error-message').classList.add('hidden');
+            document.querySelector('.hint-message').classList.add('hidden');
+        });
+        
+        // Set Target Fraction for Measuring
+        const targetFractions = [
+            { display: '1/4 cup', value: 25 },
+            { display: '1/3 cup', value: 33.33 },
+            { display: '1/2 cup', value: 50 },
+            { display: '2/3 cup', value: 66.67 },
+            { display: '3/4 cup', value: 75 },
+            { display: '1 cup', value: 100 }
+        ];
+        
+        let currentTarget = targetFractions[2]; // Start with 1/2 cup
+        
+        function setNewMeasurementTarget() {
+            currentTarget = targetFractions[Math.floor(Math.random() * targetFractions.length)];
+            document.querySelector('.fraction-target').textContent = currentTarget.display;
+            
+            // Reset the liquid level
+            liquidControl.value = 0;
+            liquid.style.height = '0%';
+            currentValue.textContent = '0%';
+            
+            // Hide feedback
+            document.querySelector('.feedback').classList.add('hidden');
+        }
+        
+        document.querySelector('.new-measurement-target').addEventListener('click', setNewMeasurementTarget);
+        
+        // Check Measurement
+        document.querySelector('.check-measurement').addEventListener('click', () => {
+            const currentLevel = parseFloat(liquidControl.value);
+            const targetLevel = currentTarget.value;
+            const tolerance = 5; // Allow 5% tolerance
+            
+            const feedback = document.querySelector('.feedback');
+            const successMessage = document.querySelector('.success-message');
+            const errorMessage = document.querySelector('.error-message');
+            const hintMessage = document.querySelector('.hint-message');
+            const hintText = document.querySelector('.hint-text');
+            
+            feedback.classList.remove('hidden');
+            
+            if (Math.abs(currentLevel - targetLevel) <= tolerance) {
+                successMessage.classList.remove('hidden');
+                errorMessage.classList.add('hidden');
+                hintMessage.classList.add('hidden');
+                
+                // Show celebration
+                showCelebration();
+                
+                // Update progress
+                updateProgress();
+                
+                // Set new target after a success
+                setTimeout(setNewMeasurementTarget, 2000);
+            } else {
+                successMessage.classList.add('hidden');
+                errorMessage.classList.remove('hidden');
+                hintMessage.classList.remove('hidden');
+                
+                if (currentLevel < targetLevel) {
+                    hintText.textContent = `Thêm chất lỏng vào! Mức hiện tại thấp hơn ${currentTarget.display}.`;
+                } else {
+                    hintText.textContent = `Giảm chất lỏng xuống! Mức hiện tại cao hơn ${currentTarget.display}.`;
+                }
+            }
+        });
+        
+        // Pizza Slicing Interaction
+        const pizzaContainer = document.getElementById('pizza');
+        let totalSlices = 8;
+        let selectedSlices = 0;
+        
+        // Initial Pizza Slicing
+        createPizzaSlices(totalSlices);
+        
+        function createPizzaSlices(numSlices) {
+            // Clear existing slices
+            pizzaContainer.innerHTML = '';
+            
+            // Create pizza toppings (for visual interest)
+            for (let i = 0; i < 20; i++) {
+                const topping = document.createElement('div');
+                topping.className = 'pizza-topping';
+                
+                // Random position within the pizza
+                const angle = Math.random() * Math.PI * 2;
+                const distance = Math.random() * 130; // Pizza radius is 150px
+                
+                topping.style.left = `${150 + Math.cos(angle) * distance}px`;
+                topping.style.top = `${150 + Math.sin(angle) * distance}px`;
+                
+                pizzaContainer.appendChild(topping);
+            }
+            
+            // Create slice lines
+            for (let i = 0; i < numSlices; i++) {
+                const line = document.createElement('div');
+                line.className = 'pizza-slice-line';
+                line.style.transform = `rotate(${i * (360 / numSlices)}deg)`;
+                pizzaContainer.appendChild(line);
+            }
+            
+            // Create interactive slices
+            for (let i = 0; i < numSlices; i++) {
+                const slice = document.createElement('div');
+                slice.className = 'pizza-slice';
+                slice.style.clipPath = `polygon(50% 50%, ${50 + 50 * Math.cos(i * 2 * Math.PI / numSlices)}% ${50 + 50 * Math.sin(i * 2 * Math.PI / numSlices)}%, ${50 + 50 * Math.cos((i + 1) * 2 * Math.PI / numSlices)}% ${50 + 50 * Math.sin((i + 1) * 2 * Math.PI / numSlices)}%)`;
+                slice.style.transform = `rotate(${i * (360 / numSlices)}deg)`;
+                
+                slice.addEventListener('click', () => {
+                    if (slice.classList.contains('selected')) {
+                        slice.classList.remove('selected');
+                        selectedSlices--;
+                    } else {
+                        slice.classList.add('selected');
+                        selectedSlices++;
+                    }
+                    updateSelectedSlicesInfo();
+                });
+                
+                pizzaContainer.appendChild(slice);
+            }
+            
+            // Reset selected slices
+            selectedSlices = 0;
+            totalSlices = numSlices;
+            updateSelectedSlicesInfo();
+        }
+        
+        // Update the display of selected slices
+        function updateSelectedSlicesInfo() {
+            document.querySelector('.selected-count').textContent = selectedSlices;
+            document.querySelector('.total-count').textContent = totalSlices;
+            document.querySelector('.current-fraction').textContent = `${selectedSlices}/${totalSlices}`;
+        }
+        
+        // Handle slice button clicks
+        document.querySelectorAll('.slice-pizza').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const slices = parseInt(e.target.getAttribute('data-slices'));
+                createPizzaSlices(slices);
+                
+                // Hide feedback
+                document.querySelector('.pizza-feedback').classList.add('hidden');
+            });
+        });
+        
+        // Pizza Target Fractions
+        const pizzaTargets = [
+            { display: 'Chọn 1/2 pizza', numerator: 1, denominator: 2 },
+            { display: 'Chọn 1/4 pizza', numerator: 1, denominator: 4 },
+            { display: 'Chọn 3/4 pizza', numerator: 3, denominator: 4 },
+            { display: 'Chọn 3/8 pizza', numerator: 3, denominator: 8 },
+            { display: 'Chọn 5/8 pizza', numerator: 5, denominator: 8 },
+            { display: 'Chọn 2/3 pizza', numerator: 2, denominator: 3 }
+        ];
+        
+        let currentPizzaTarget = pizzaTargets[3]; // Start with 3/8
+        
+        function setNewPizzaTarget() {
+            currentPizzaTarget = pizzaTargets[Math.floor(Math.random() * pizzaTargets.length)];
+            document.querySelector('.pizza-target').textContent = currentPizzaTarget.display;
+            
+            // Create pizza with the correct number of slices
+            // Default to 8 slices if the denominator is 8, 4 if denominator is 4, etc.
+            let recommendedSlices = 8; // Default
+            
+            if (currentPizzaTarget.denominator === 2) recommendedSlices = 2;
+            else if (currentPizzaTarget.denominator === 3) recommendedSlices = 3;
+            else if (currentPizzaTarget.denominator === 4) recommendedSlices = 4;
+            
+            // Auto-click the appropriate slice button
+            document.querySelector(`[data-slices="${recommendedSlices}"]`).click();
+            
+            // Hide feedback
+            document.querySelector('.pizza-feedback').classList.add('hidden');
+        }
+        
+        document.querySelector('.new-pizza-target').addEventListener('click', setNewPizzaTarget);
+        
+        // Check Pizza Slices
+        document.querySelector('.check-pizza-slices').addEventListener('click', () => {
+            const currentNumerator = selectedSlices;
+            const currentDenominator = totalSlices;
+            
+            const targetNumerator = currentPizzaTarget.numerator;
+            const targetDenominator = currentPizzaTarget.denominator;
+            
+            const feedback = document.querySelector('.pizza-feedback');
+            const successMessage = document.querySelector('.pizza-success-message');
+            const errorMessage = document.querySelector('.pizza-error-message');
+            const hintMessage = document.querySelector('.pizza-hint-message');
+            const hintText = document.querySelector('.pizza-hint-text');
+            
+            feedback.classList.remove('hidden');
+            
+            // Check if fractions are equivalent
+            // For example, 1/2 is equivalent to 2/4
+            const isEquivalent = (currentNumerator * targetDenominator === targetNumerator * currentDenominator);
+            
+            if (isEquivalent) {
+                successMessage.classList.remove('hidden');
+                errorMessage.classList.add('hidden');
+                hintMessage.classList.add('hidden');
+                
+                // Show celebration
+                showCelebration();
+                
+                // Update progress
+                updateProgress();
+                
+                // Set new target after a success
+                setTimeout(setNewPizzaTarget, 2000);
+            } else {
+                successMessage.classList.add('hidden');
+                errorMessage.classList.remove('hidden');
+                hintMessage.classList.remove('hidden');
+                
+                // Get the decimal values for comparison
+                const currentDecimal = currentNumerator / currentDenominator;
+                const targetDecimal = targetNumerator / targetDenominator;
+                
+                if (currentDecimal < targetDecimal) {
+                    hintText.textContent = `Chọn thêm phần! ${currentNumerator}/${currentDenominator} nhỏ hơn ${targetNumerator}/${targetDenominator}.`;
+                } else {
+                    hintText.textContent = `Chọn ít hơn! ${currentNumerator}/${currentDenominator} lớn hơn ${targetNumerator}/${targetDenominator}.`;
+                }
+            }
+        });
+        
+        // Recipe Scaling Interaction
+        const servingSlider = document.querySelector('.serving-slider');
+        const servingCount = document.getElementById('serving-count');
+        
+        // Original amounts for 4 servings
+        const originalAmounts = {
+            flour: 2,
+            sugar: "3/4",
+            butter: "1/2",
+            chocolate: "1 1/2",
+            egg: 2,
+            vanilla: "1/4"
+        };
+        
+        function updateRecipeAmounts(servings) {
+            const ratio = servings / 4; // Calculate ratio compared to original recipe
+            
+            // Update display
+            servingCount.textContent = servings;
+            
+            // Update amounts based on ratio
+            document.querySelector('.flour-amount').textContent = formatAmount(originalAmounts.flour * ratio);
+            document.querySelector('.sugar-amount').textContent = scaleAndFormatFraction(originalAmounts.sugar, ratio);
+            document.querySelector('.butter-amount').textContent = scaleAndFormatFraction(originalAmounts.butter, ratio);
+            document.querySelector('.chocolate-amount').textContent = scaleAndFormatFraction(originalAmounts.chocolate, ratio);
+            document.querySelector('.egg-amount').textContent = formatAmount(originalAmounts.egg * ratio);
+            document.querySelector('.vanilla-amount').textContent = scaleAndFormatFraction(originalAmounts.vanilla, ratio);
+            
+            // Update example calculation in the calculator
+            updateCalculatorExample(servings);
+        }
+        
+        function formatAmount(amount) {
+            // Round to nearest 0.25 for better fractions
+            amount = Math.round(amount * 4) / 4;
+            return amount.toString();
+        }
+        
+        function scaleAndFormatFraction(fractionStr, ratio) {
+            // Handle mixed numbers like "1 1/2"
+            if (fractionStr.includes(" ")) {
+                const [whole, fraction] = fractionStr.split(" ");
+                const [numerator, denominator] = fraction.split("/");
+                
+                let totalNumerator = parseInt(whole) * parseInt(denominator) + parseInt(numerator);
+                let scaledNumerator = totalNumerator * ratio;
+                
+                // Convert back to mixed number
+                const newWhole = Math.floor(scaledNumerator / parseInt(denominator));
+                const newNumerator = Math.round((scaledNumerator % parseInt(denominator)) * 100) / 100;
+                
+                if (newWhole === 0) {
+                    return `${newNumerator}/${denominator}`;
+                } else if (newNumerator === 0) {
+                    return newWhole.toString();
+                } else {
+                    return `${newWhole} ${newNumerator}/${denominator}`;
+                }
+            } 
+            // Handle simple fractions like "3/4"
+            else if (fractionStr.includes("/")) {
+                const [numerator, denominator] = fractionStr.split("/");
+                const scaledNumerator = parseInt(numerator) * ratio;
+                
+                // If we can simplify to a whole number
+                if (scaledNumerator % parseInt(denominator) === 0) {
+                    return (scaledNumerator / parseInt(denominator)).toString();
+                }
+                
+                // Return simplified fraction
+                return `${Math.round(scaledNumerator * 100) / 100}/${denominator}`;
+            }
+            // Handle whole numbers
+            else {
+                return (parseInt(fractionStr) * ratio).toString();
+            }
+        }
+        
+        function updateCalculatorExample(servings) {
+            const ratio = servings / 4;
+            const explanation = `
+                Đổi từ 4 người lên ${servings} người:<br>
+                Hệ số điều chỉnh = ${servings} ÷ 4 = ${ratio}<br>
+                Lượng đường mới = 3/4 cup × ${ratio} = ${scaleAndFormatFraction("3/4", ratio)} cup
+            `;
+            document.querySelector('.calculator-explanation').innerHTML = explanation;
+            
+            // Update the simple example calculation
+            document.querySelector('.example-calculation').textContent = 
+                `2 cup × (${servings} ÷ 4) = 2 cup × ${ratio} = ${formatAmount(2 * ratio)} cup`;
+        }
+        
+        servingSlider.addEventListener('input', (e) => {
+            const servings = parseInt(e.target.value);
+            updateRecipeAmounts(servings);
+        });
+        
+        // Serving control buttons
+        document.querySelector('.increase-serving').addEventListener('click', () => {
+            const currentServings = parseInt(servingSlider.value);
+            if (currentServings < 10) {
+                servingSlider.value = currentServings + 1;
+                updateRecipeAmounts(currentServings + 1);
+            }
+        });
+        
+        document.querySelector('.decrease-serving').addEventListener('click', () => {
+            const currentServings = parseInt(servingSlider.value);
+            if (currentServings > 1) {
+                servingSlider.value = currentServings - 1;
+                updateRecipeAmounts(currentServings - 1);
+            }
+        });
+        
+        // Recipe quiz
+        document.querySelector('.recipe-quiz').addEventListener('click', () => {
+            const currentServings = parseInt(servingSlider.value);
+            
+            // Create a simple quiz dialog
+            const quiz = document.createElement('div');
+            quiz.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            quiz.innerHTML = `
+                <div class="bg-white p-6 rounded-lg max-w-md">
+                    <h3 class="text-xl font-bold mb-4">Kiểm Tra Kiến Thức</h3>
+                    <p class="mb-4">Nếu công thức gốc cần 1/2 cup bơ cho 4 người, cần bao nhiêu bơ cho ${currentServings} người?</p>
+                    <input type="text" class="w-full p-2 border rounded mb-4" placeholder="Nhập đáp án của bạn (ví dụ: 3/4)">
+                    <div class="flex justify-between">
+                        <button class="btn-secondary quiz-cancel">Hủy</button>
+                        <button class="btn-primary quiz-check">Kiểm Tra</button>
+                    </div>
+                    <div class="quiz-feedback mt-4 hidden"></div>
+                </div>
+            `;
+            
+            document.body.appendChild(quiz);
+            
+            // Handle quiz interactions
+            quiz.querySelector('.quiz-cancel').addEventListener('click', () => {
+                document.body.removeChild(quiz);
+            });
+            
+            quiz.querySelector('.quiz-check').addEventListener('click', () => {
+                const answer = quiz.querySelector('input').value.trim();
+                const correctAnswer = scaleAndFormatFraction("1/2", currentServings / 4);
+                const feedback = quiz.querySelector('.quiz-feedback');
+                
+                feedback.classList.remove('hidden');
+                
+                if (isEquivalentFraction(answer, correctAnswer)) {
+                    feedback.innerHTML = `
+                        <div class="text-green-600">
+                            <i class="fas fa-check-circle mr-2"></i> Tuyệt vời! ${answer} là đáp án chính xác.
+                        </div>
+                    `;
+                    updateProgress();
+                    showCelebration();
+                } else {
+                    feedback.innerHTML = `
+                        <div class="text-red-600">
+                            <i class="fas fa-times-circle mr-2"></i> Chưa đúng! Đáp án đúng là ${correctAnswer}.
+                        </div>
+                        <div class="mt-2">
+                            Cách tính: 1/2 × (${currentServings} ÷ 4) = 1/2 × ${currentServings / 4} = ${correctAnswer}
+                        </div>
+                    `;
+                }
+            });
+        });
+        
+        // Helper function to compare fractions
+        function isEquivalentFraction(fraction1, fraction2) {
+            // Convert to decimal for comparison
+            const decimal1 = convertFractionToDecimal(fraction1);
+            const decimal2 = convertFractionToDecimal(fraction2);
+            
+            // Allow a small tolerance for floating point errors
+            return Math.abs(decimal1 - decimal2) < 0.01;
+        }
+        
+        function convertFractionToDecimal(fractionStr) {
+            // Handle mixed numbers like "1 1/2"
+            if (fractionStr.includes(" ")) {
+                const [whole, fraction] = fractionStr.split(" ");
+                const [numerator, denominator] = fraction.split("/");
+                return parseInt(whole) + parseInt(numerator) / parseInt(denominator);
+            } 
+            // Handle simple fractions like "3/4"
+            else if (fractionStr.includes("/")) {
+                const [numerator, denominator] = fractionStr.split("/");
+                return parseInt(numerator) / parseInt(denominator);
+            }
+            // Handle whole numbers
+            else {
+                return parseInt(fractionStr);
+            }
+        }
+        
+        // Progress tracking
+        let progress = 0;
+        const progressBar = document.querySelector('.progress-bar');
+        
+        function updateProgress() {
+            progress += 5;
+            if (progress > 100) progress = 100;
+            
+            progressBar.style.width = `${progress}%`;
+            progressBar.textContent = `${progress}%`;
+        }
+        
+        // Star rating
+        document.querySelectorAll('.star').forEach(star => {
+            star.addEventListener('click', (e) => {
+                const rating = e.currentTarget.getAttribute('data-rating');
+                
+                // Clear all active stars
+                document.querySelectorAll('.star').forEach(s => {
+                    s.classList.remove('active');
+                });
+                
+                // Set active stars up to the clicked one
+                document.querySelectorAll(`.star[data-rating="${rating}"],.star[data-rating="${rating}"] ~ .star`).forEach(s => {
+                    if (parseInt(s.getAttribute('data-rating')) <= rating) {
+                        s.classList.add('active');
+                    }
+                });
+            });
+        });
+        
+        document.querySelector('.submit-rating').addEventListener('click', () => {
+            // Count active stars
+            const activeStars = document.querySelectorAll('.star.active').length;
+            
+            if (activeStars > 0) {
+                // Thank the user
+                alert(`Cảm ơn bạn đã đánh giá ${activeStars}/5 sao! Chúng tôi rất trân trọng phản hồi của bạn.`);
+                updateProgress();
+            } else {
+                alert('Vui lòng chọn số sao đánh giá trước khi gửi!');
+            }
+        });
+        
+        // Celebration animation
+        function showCelebration() {
+            const celebration = document.getElementById('celebration');
+            celebration.innerHTML = '';
+            celebration.style.display = 'block';
+            
+            for (let i = 0; i < 50; i++) {
+                createConfetti(celebration);
+            }
+            
+            setTimeout(() => {
+                celebration.style.display = 'none';
+            }, 3000);
+        }
+        
+        function createConfetti(container) {
+            const confetti = document.createElement('div');
+            confetti.className = 'confetti';
+            
+            // Random color
+            const colors = ['#FF6B35', '#4CB944', '#FFD23F', '#2E294E', '#5BC0EB'];
+            confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            
+            // Random size
+            const size = Math.random() * 10 + 5;
+            confetti.style.width = `${size}px`;
+            confetti.style.height = `${size}px`;
+            
+            // Random starting position
+            const startPosX = Math.random() * window.innerWidth;
+            confetti.style.left = `${startPosX}px`;
+            confetti.style.top = '-20px';
+            
+            // Random shape
+            const shapes = ['circle', 'square', 'triangle'];
+            const shape = shapes[Math.floor(Math.random() * shapes.length)];
+            
+            if (shape === 'circle') {
+                confetti.style.borderRadius = '50%';
+            } else if (shape === 'triangle') {
+                confetti.style.width = '0';
+                confetti.style.height = '0';
+                confetti.style.borderLeft = `${size}px solid transparent`;
+                confetti.style.borderRight = `${size}px solid transparent`;
+                confetti.style.borderBottom = `${size}px solid ${confetti.style.backgroundColor}`;
+                confetti.style.backgroundColor = 'transparent';
+            }
+            
+            container.appendChild(confetti);
+            
+            // Animate falling
+            const duration = Math.random() * 3 + 2;
+            const rotation = Math.random() * 360;
+            const endPosX = startPosX + (Math.random() * 200 - 100);
+            const endPosY = window.innerHeight + 100;
+            
+            confetti.animate([
+                { 
+                    transform: `translate(0, 0) rotate(0deg)`,
+                    opacity: 0
+                },
+                { 
+                    transform: `translate(${(endPosX - startPosX) / 2}px, ${endPosY / 2}px) rotate(${rotation / 2}deg)`,
+                    opacity: 1
+                },
+                { 
+                    transform: `translate(${endPosX - startPosX}px, ${endPosY}px) rotate(${rotation}deg)`,
+                    opacity: 0
+                }
+            ], {
+                duration: duration * 1000,
+                easing: 'cubic-bezier(0.215, 0.61, 0.355, 1)',
+                fill: 'forwards'
+            });
+            
+            // Remove after animation
+            setTimeout(() => {
+                if (container.contains(confetti)) {
+                    container.removeChild(confetti);
+                }
+            }, duration * 1000);
+        }
+        
+        // Initialize the game
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set initial progress
+            updateProgress();
+            
+            // Set initial targets
+            setNewMeasurementTarget();
+            setNewPizzaTarget();
+            
+            // Update recipe for initial serving count
+            updateRecipeAmounts(4);
+        });
+    </script>
+</body>
+</html>

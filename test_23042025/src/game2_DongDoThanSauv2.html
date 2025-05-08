@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Đong Đổ Thần Sầu - Game Học Phân Số</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Hoàn thiện trò chơi giáo dục HTML5 &quot;Đong Đổ Thần Sầu&quot; cho học sinh tiểu học, với đầy đủ các trạng thái game, cơ chế đong đổ nguyên liệu theo phân số, hệ thống điểm số và đánh giá độ chính xác.">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.2/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #007AFF;
+      --secondary: #5856D6;
+      --success: #34C759;
+      --warning: #FF9500;
+      --danger: #FF3B30;
+      --background: #F2F2F7;
+      --surface: #FFFFFF;
+      --text-primary: #1C1C1E;
+      --text-secondary: #8E8E93;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--background);
+      font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(180deg, var(--background) 0%, #E5E5EA 100%);
+      overflow-x: hidden;
+    }
+
+    .fraction {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 2rem;
+    }
+
+    .fraction .numerator {
+      border-bottom: 2px solid var(--text-primary);
+      margin-bottom: -8px;
+      font-size: 1.2em;
+    }
+
+    .fraction .denominator {
+      font-size: 1em;
+    }
+
+    .order-bg {
+      background: var(--surface);
+      border-radius: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      padding: 1.5rem 2rem;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .liquid {
+      transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .custom-btn {
+      font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%);
+      color: white;
+      font-weight: 600;
+      padding: 1rem 2.5rem;
+      border-radius: 20px;
+      font-size: 1.2rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      border: none;
+      outline: none;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .custom-btn::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 100%);
+      transform: translateX(-100%);
+      transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .custom-btn:hover::after {
+      transform: translateX(100%);
+    }
+
+    .custom-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 25px rgba(0,0,0,0.15);
+    }
+
+    .custom-btn:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .cup-mark {
+      user-select: none;
+      pointer-events: none;
+      fill: var(--text-primary);
+      stroke: var(--text-secondary);
+      font-size: 16px;
+      font-weight: 500;
+      font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    .cup-mark-line {
+      stroke: var(--text-secondary);
+      stroke-width: 1.5;
+    }
+
+    .shine-anim {
+      animation: shine 1s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @keyframes shine {
+      0% { filter: brightness(1); }
+      50% { filter: brightness(1.5); }
+      100% { filter: brightness(1); }
+    }
+
+    .shake-anim {
+      animation: shake 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @keyframes shake {
+      10%, 90% { transform: translateX(-1px); }
+      20%, 80% { transform: translateX(2px); }
+      30%, 50%, 70% { transform: translateX(-3px); }
+      40%, 60% { transform: translateX(3px); }
+      100% { transform: translateX(0); }
+    }
+
+    ::selection {
+      background: rgba(0, 122, 255, 0.2);
+    }
+
+    /* Glass morphism effect */
+    .glass {
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    /* Smooth transitions */
+    .transition-all {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Modern shadows */
+    .shadow-soft {
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+
+    .shadow-hard {
+      box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+    }
+  </style>
+</head>
+<body class="flex flex-col items-center min-h-screen pb-10">
+  <main class="w-full flex flex-col items-center">
+    <div id="menu" class="flex flex-col items-center justify-center min-h-screen">
+      <div class="mb-8 flex items-center gap-6">
+        <img src="https://cdn.jsdelivr.net/gh/vuminhduc/cdn-fun/vui-chef.svg" class="h-24 w-24" alt="Logo Chef" loading="lazy">
+        <span class="text-5xl sm:text-6xl font-bold text-primary drop-shadow">Đong Đổ Thần Sầu</span>
+      </div>
+      <div class="max-w-lg text-xl md:text-2xl text-text-primary text-center mb-10 glass rounded-3xl px-8 py-6 shadow-soft font-medium">
+        Trở thành <span class="text-secondary">"Master Chef"</span>! Học phân số & luyện kỹ năng đong nguyên liệu siêu chuẩn cùng bếp vui nhộn.
+      </div>
+      <div class="flex flex-col gap-6">
+        <button id="btn-practice" class="custom-btn text-lg"><i class="fas fa-utensils mr-3"></i>Chế độ Luyện tập</button>
+        <button id="btn-challenge" class="custom-btn text-lg"><i class="fas fa-fire mr-3"></i>Thử thách Thần Sầu</button>
+      </div>
+      <div class="mt-10 text-text-secondary text-sm flex gap-3 items-center select-none opacity-70">
+        <i class="fas fa-info-circle"></i>
+        <span>Inspirations: Cooking Mama, Happy Glass, Fraction Lab</span>
+      </div>
+    </div>
+    <div id="game" class="w-full flex flex-col items-center hidden select-none">
+      <!-- Top Bar -->
+      <div class="flex justify-between items-center w-full max-w-3xl pt-6 px-6 md:px-0 mb-4">
+        <div class="flex items-center gap-4">
+          <div class="relative">
+            <svg class="w-10 h-10" viewBox="0 0 36 36">
+              <circle cx="18" cy="18" r="16" stroke="var(--text-secondary)" stroke-width="3" fill="var(--surface)"/>
+              <circle cx="18" cy="18" r="14" stroke="var(--text-secondary)" stroke-width="3" fill="none" id="timer-bg"/>
+              <circle cx="18" cy="18" r="14" stroke="var(--primary)" stroke-width="3" fill="none"
+                id="timer-bar" style="stroke-dasharray:87.96459430051421;stroke-dashoffset:0;transform: rotate(-90deg);transform-origin: center;"></circle>
+              <text x="18" y="22" font-size="15" fill="var(--text-primary)" text-anchor="middle" font-family="SF Pro Display"
+                    id="timer-text"></text>
+            </svg>
+          </div>
+          <span class="text-xl font-semibold text-text-primary hidden sm:inline">Thời gian</span>
+        </div>
+        <div class="flex items-center gap-4 text-xl font-semibold">
+          <span class="hidden sm:inline text-text-primary">Điểm:</span>
+          <span class="text-primary bg-primary bg-opacity-10 px-4 py-2 rounded-xl font-bold" id="score-show">0</span>
+        </div>
+        <button id="btn-pause" title="Tạm dừng" class="text-2xl text-text-primary hover:text-primary transition-all"><i class="fas fa-pause"></i></button>
+      </div>
+      <!-- Game Area -->
+      <div class="flex flex-row-reverse w-full max-w-3xl gap-6 mt-4">
+        <!-- Order & Progress -->
+        <div class="flex flex-col pt-4 items-center min-w-[160px] w-2/6 gap-8">
+          <div id="order-box" class="order-bg flex flex-col gap-3 items-center w-40">
+            <div class="text-lg text-secondary font-bold mb-2"><i class="fas fa-receipt mr-2"></i>Đơn hàng</div>
+            <div class="text-md text-text-primary" id="order-label"></div>
+            <div class="flex flex-col items-center text-center">
+              <div id="order-frac" class="fraction"></div>
+              <span class="mt-2 text-sm text-text-secondary" id="order-unit"></span>
+            </div>
+          </div>
+          <div class="flex flex-col items-center gap-2 w-36">
+            <span class="font-semibold text-text-primary text-base">Tiến độ</span>
+            <div class="w-full bg-surface bg-opacity-50 h-3 rounded-xl overflow-hidden">
+              <div id="progress-bar" class="bg-primary h-3 rounded-xl transition-all duration-500" style="width:0%"></div>
+            </div>
+            <div class="flex gap-2 w-full justify-between text-xs mt-2">
+              <span id="progress-current">0</span>
+              <span>/</span>
+              <span id="progress-total">5</span>
+            </div>
+          </div>
+        </div>
+        <!-- Main Game Canvas -->
+        <div class="relative flex-1 flex flex-col items-end justify-center min-h-[410px] pt-6">
+          <!-- Cup & Liquid Canvas -->
+          <svg width="210" height="360" viewBox="0 0 210 360" class="mx-auto block" id="cup-svg">
+            <!-- Glass cup body -->
+            <ellipse cx="105" cy="345" rx="50" ry="12" fill="var(--surface)" opacity="0.8"/>
+            <rect x="55" y="60" width="100" height="285" rx="50" fill="var(--surface)" stroke="var(--text-secondary)" stroke-width="2"/>
+            <!-- Cup marks and labels will be inserted here -->
+            <g id="cup-marks"></g>
+            <!-- Liquid -->
+            <g>
+              <clipPath id="cup-clip">
+                <rect x="56" y="61" width="98" height="283" rx="49"/>
+              </clipPath>
+              <g id="liquid-group">
+                <rect x="58" y="344" width="94" height="0" rx="44" fill="var(--primary)" class="liquid" id="liquid"/>
+              </g>
+            </g>
+            <!-- Shine effect -->
+            <ellipse cx="108" cy="98" rx="21" ry="5" fill="var(--surface)" opacity=".5"/>
+            <!-- Overflow Splash (SVG animation) -->
+            <g id="splash" style="display:none">
+              <ellipse cx="105" cy="60" rx="30" ry="7" fill="var(--danger)" opacity="0.9"/>
+              <ellipse cx="80" cy="72" rx="10" ry="3" fill="var(--danger)" opacity="0.8"/>
+              <ellipse cx="132" cy="74" rx="8" ry="3" fill="var(--danger)" opacity="0.8"/>
+            </g>
+          </svg>
+          <!-- Pouring hands/pitcher (SVG) -->
+          <div class="absolute top-2 left-[-100px] sm:left-[-60px] z-20 pointer-events-none select-none transition-transform duration-150" id="handpour"
+               style="transform:rotate(-7deg)">
+            <svg id="jug-svg" width="135" height="140" viewBox="0 0 125 120">
+              <g>
+                <ellipse cx="60" cy="113" rx="26" ry="10" fill="var(--text-secondary)"/>
+                <!-- Jug body -->
+                <rect x="28" y="36" width="62" height="74" rx="30" fill="var(--surface)" stroke="var(--text-secondary)" stroke-width="2"/>
+                <!-- Jug handle -->
+                <ellipse cx="98" cy="74" rx="15" ry="32" fill="none" stroke="var(--text-secondary)" stroke-width="6"/>
+                <ellipse cx="98" cy="74" rx="6" ry="22" fill="var(--surface)" opacity="0.6"/>
+              </g>
+              <!-- Lid -->
+              <ellipse cx="59" cy="35" rx="32" ry="10" fill="var(--surface)" stroke="var(--text-secondary)" stroke-width="1.5"/>
+              <!-- Pouring liquid when active -->
+              <rect x="57" y="30" width="10" height="0" fill="var(--primary)" rx="5" id="jug-liquid"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <div class="flex justify-center w-full my-4">
+        <span class="text-secondary font-bold text-lg flex items-center gap-3" id="precision-msg"></span>
+      </div>
+    </div>
+    <!-- Pause Overlay -->
+    <div id="paused" class="fixed top-0 left-0 w-full h-full z-40 bg-black bg-opacity-40 hidden flex justify-center items-center">
+      <div class="glass rounded-3xl px-12 py-12 text-center shadow-hard flex flex-col items-center gap-6">
+        <div class="text-4xl text-primary font-bold mb-3"><i class="fas fa-pause-circle"></i> Tạm dừng</div>
+        <div class="text-xl text-text-primary">Bạn muốn tiếp tục hay kết thúc ván chơi?</div>
+        <div class="flex gap-6 mt-4">
+          <button class="custom-btn text-lg" id="btn-resume"><i class="fas fa-play mr-3"></i>Tiếp tục</button>
+          <button class="custom-btn text-lg" id="btn-exit"><i class="fas fa-sign-out-alt mr-3"></i>Thoát</button>
+        </div>
+      </div>
+    </div>
+    <!-- Game Over Overlay -->
+    <div id="gameover" class="fixed top-0 left-0 w-full h-full z-50 bg-surface bg-opacity-95 hidden flex justify-center items-center">
+      <div class="glass rounded-3xl px-12 py-12 text-center shadow-hard flex flex-col items-center gap-6 max-w-lg">
+        <div class="text-5xl font-bold text-primary drop-shadow mb-3 flex items-center gap-3">
+          <i class="fas fa-crown"></i> Kết thúc ván
+        </div>
+        <div class="w-full flex flex-col gap-6 items-center">
+          <div class="text-3xl text-secondary font-semibold mt-2" id="final-score">Điểm: 0</div>
+          <div class="flex flex-row gap-8 mt-4">
+            <div>
+              <div class="text-primary font-bold text-2xl" id="final-accuracy">0%</div>
+              <div class="uppercase text-xs font-bold text-text-secondary">Độ chính xác TB</div>
+            </div>
+            <div>
+              <div class="text-secondary font-bold text-2xl" id="final-overflow">0%</div>
+              <div class="uppercase text-xs font-bold text-text-secondary">Lãng phí TB</div>
+            </div>
+          </div>
+        </div>
+        <div class="mt-6 mb-4 w-full flex flex-col items-center gap-4">
+          <button class="custom-btn text-lg w-56" id="btn-restart"><i class="fas fa-sync mr-3"></i>Chơi lại</button>
+          <a href="#" onclick="location.reload()" class="text-primary text-sm mt-2 hover:underline">Về màn hình chính</a>
+        </div>
+      </div>
+    </div>
+  </main>
+  <audio id="sound-correct" src="https://cdn.jsdelivr.net/gh/vuminhduc/cdn-fun/ting.mp3" preload="auto"></audio>
+  <audio id="sound-over" src="https://cdn.jsdelivr.net/gh/vuminhduc/cdn-fun/splash.mp3" preload="auto"></audio>
+  <audio id="sound-tick" src="https://cdn.jsdelivr.net/gh/vuminhduc/cdn-fun/tick-tock.mp3" preload="auto"></audio>
+  <audio id="sound-button" src="https://cdn.jsdelivr.net/gh/vuminhduc/cdn-fun/click-btn.mp3" preload="auto"></audio>
+  <script>
+    // GAME DATA & CONFIG
+    const FRACTIONS_LEVELS = [
+      // Tập sự
+      [{display:"1/2", num:1, denom:2}, {display:"1/3", num:1, denom:3}, {display:"1/4", num:1, denom:4}],
+      // Chuyên viên
+      [{display:"3/4", num:3, denom:4}, {display:"5/8", num:5, denom:8}, {display:"2/3", num:2, denom:3}],
+      // Bậc thầy
+      [{display:"7/10", num:7, denom:10}, {display:"11/12", num:11, denom:12}]
+    ];
+    const ORDER_ITEMS = [
+      {name:"cốc sữa", unit:"cốc", color:"var(--primary)"},
+      {name:"bột mì", unit:"cốc", color:"var(--secondary)"},
+      {name:"nước cam", unit:"cốc", color:"var(--warning)"},
+      {name:"nước lọc", unit:"cốc", color:"var(--info)"},
+      {name:"nước dâu", unit:"cốc", color:"var(--danger)"},
+      {name:"đường", unit:"cốc", color:"var(--success)"},
+      {name:"siro", unit:"cốc", color:"var(--secondary)"}
+    ];
+    const LEVELS_CONFIG = [
+      {label:"Tập sự", nOrders:5, baseTime:45, fractions:FRACTIONS_LEVELS[0], pourSpeed:75},
+      {label:"Chuyên viên", nOrders:5, baseTime:37, fractions:FRACTIONS_LEVELS[1], pourSpeed:98},
+      {label:"Bậc thầy", nOrders:5, baseTime:30, fractions:FRACTIONS_LEVELS[2], pourSpeed:124}
+    ];
+
+    // --- STATE
+    let gameMode = 'practice';
+    let curLevel = 0;
+    let orders = [], orderIndex = 0;
+    let score = 0, accuracySum = 0, overflowSum = 0, numOrders = 0;
+    let gameTimer = null, paused = false, timeLeft = 60, totalTime = 60;
+    let pouring = false, pourStart = null, liquidLevel = 0, pourAnim = null, targetFrac = null, targetOrder = null;
+    let pourDelta = 0, lastPourUpdate = 0, lastInteraction = 0;
+    let liquidHistory = [];
+    let wantExit = false;
+
+    // --- UI Elements
+    const $ = sel => document.querySelector(sel);
+    const $$ = sel => document.querySelectorAll(sel);
+
+    // EVENT BINDING & ENTRY
+    window.addEventListener("DOMContentLoaded", ()=>initUI());
+
+    function initUI() {
+      // Start buttons
+      $("#btn-practice").onclick = ()=>{
+        playButtonSound();
+        startGame('practice');
+      };
+      $("#btn-challenge").onclick = ()=>{
+        playButtonSound();
+        startGame('challenge');
+      };
+      $("#btn-pause").onclick = ()=>{
+        playButtonSound();
+        pauseGame();
+      };
+      $("#btn-exit").onclick = ()=>{
+        playButtonSound();
+        exitGame();
+      };
+      $("#btn-resume").onclick = ()=>{
+        playButtonSound();
+        resumeGame();
+      };
+      $("#btn-restart").onclick = ()=>{
+        playButtonSound();
+        restartGame();
+      };
+      // Input listeners
+      setupPourInput();
+    }
+
+    function playButtonSound() {
+      try { 
+        $("#sound-button").currentTime = 0; 
+        $("#sound-button").play();
+      } catch {}
+    }
+
+    // UTILS
+    function shuffle(arr) {
+      let a = arr.slice();
+      for (let i = a.length - 1; i > 0; i--) {
+          let j = Math.floor(Math.random() * (i + 1));
+          [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    function clamp(x, min, max) {
+      return Math.min(max, Math.max(min, x));
+    }
+
+    function roundTo(x, dec = 2) {
+      return Math.round(x * Math.pow(10, dec)) / Math.pow(10, dec);
+    }
+
+    function fracToStr(n, d) {
+      return `<span class="numerator">${n}</span><span class="denominator">${d}</span>`;
+    }
+
+    function playCorrectSound() {
+      try { 
+        $("#sound-correct").currentTime = 0; 
+        $("#sound-correct").play();
+      } catch(e){}
+    }
+
+    function playOverSound() {
+      try { 
+        $("#sound-over").currentTime = 0; 
+        $("#sound-over").play();
+      } catch(e){}
+    }
+
+    function playTickSound() {
+      try { 
+        $("#sound-tick").currentTime = 0; 
+        $("#sound-tick").play();
+      } catch(e){}
+    }
+
+    // GAME FLOW
+    function startGame(mode = 'practice') {
+      gameMode = mode;
+      curLevel = 0;
+      if(mode == "challenge") curLevel = 0;
+      orders = generateOrders();
+      orderIndex = 0;
+      score = 0; accuracySum = 0; overflowSum = 0; numOrders = 0;
+      showGame();
+      setupOrder();
+    }
+
+    function showGame() {
+      $("#menu").classList.add("hidden");
+      $("#game").classList.remove("hidden");
+      $("#gameover").classList.add("hidden");
+      $("#paused").classList.add("hidden");
+      $("#progress-current").textContent = 0;
+      $("#score-show").textContent = 0;
+      resetLiquid();
+      liquidHistory = [];
+      paused = false;
+      wantExit = false;
+    }
+
+    function pauseGame() {
+      paused = true;
+      stopGameTimer();
+      $("#paused").classList.remove("hidden");
+    }
+
+    function resumeGame() {
+      paused = false;
+      $("#paused").classList.add("hidden");
+      resumeGameTimer();
+    }
+
+    function exitGame() {
+      stopGameTimer();
+      $("#game").classList.add("hidden");
+      $("#paused").classList.add("hidden");
+      $("#menu").classList.remove("hidden");
+    }
+
+    function restartGame() {
+      startGame(gameMode);
+    }
+
+    function showGameOver() {
+      stopGameTimer();
+      $("#gameover").classList.remove("hidden");
+      let acc = numOrders ? accuracySum/numOrders : 0;
+      let over = numOrders ? overflowSum/numOrders : 0;
+      $("#final-score").textContent = "Điểm: " + score;
+      $("#final-accuracy").textContent = Math.round(acc*100) + "%";
+      $("#final-overflow").textContent = Math.round(over*100) + "%";
+    }
+
+    function generateOrders() {
+      let ordersArr = [];
+      let useLevels = (gameMode === "practice")? [0]: [0,1,2];
+      let orderCount = LEVELS_CONFIG[useLevels[0]].nOrders;
+      let pickArr = [];
+      useLevels.forEach(l => {
+        let fracs = shuffle(LEVELS_CONFIG[l].fractions);
+        for(let i = 0; i < LEVELS_CONFIG[l].nOrders; i++)
+          pickArr.push(fracs[i % fracs.length]);
+      });
+      pickArr = shuffle(pickArr);
+      for(let i = 0; i < pickArr.length; i++) {
+        let order = Object.assign({}, ORDER_ITEMS[i % ORDER_ITEMS.length]);
+        order.frac = pickArr[i];
+        order.level = useLevels.length > 1? (i < 5? 0: i < 10? 1: 2): 0;
+        order.time = LEVELS_CONFIG[order.level].baseTime;
+        order.pourSpeed = LEVELS_CONFIG[order.level].pourSpeed;
+        ordersArr.push(order);
+      }
+      return ordersArr;
+    }
+
+    function setupOrder() {
+      if(orderIndex >= orders.length) {
+        showGameOver();
+        return;
+      }
+      targetOrder = orders[orderIndex];
+      let nDenomMarks = targetOrder.level === 2? 3: 5;
+      renderCupMarks(nDenomMarks);
+      
+      // Update UI with new order
+      $("#order-label").textContent = targetOrder.name[0].toUpperCase() + targetOrder.name.slice(1);
+      $("#order-frac").innerHTML = `
+        <div class="fraction text-3xl">
+          <span class="numerator">${targetOrder.frac.num}</span>
+          <span class="denominator">${targetOrder.frac.denom}</span>
+        </div>`;
+      $("#order-unit").textContent = targetOrder.unit;
+      
+      // Update progress
+      $("#progress-bar").style.width = `${100 * orderIndex / orders.length}%`;
+      $("#progress-current").textContent = orderIndex + 1;
+      $("#progress-total").textContent = orders.length;
+      
+      // Reset cup and set new parameters
+      resetLiquid();
+      targetFrac = targetOrder.frac;
+      timeLeft = targetOrder.time;
+      totalTime = targetOrder.time;
+      updateTimer();
+      runGameTimer();
+      setPourSpeed(targetOrder.pourSpeed);
+      showPrecision("");
+      animHand(-7);
+      
+      // Update liquid color
+      $("#liquid").setAttribute("fill", targetOrder.color);
+      $("#jug-liquid").setAttribute("fill", targetOrder.color);
+    }
+
+    // TIMER SYSTEM
+    function runGameTimer() {
+      stopGameTimer();
+      let lastTick = performance.now();
+      updateTimer();
+      
+      function tick(now) {
+        if(paused) return;
+        let dt = (now - lastTick) / 1000;
+        lastTick = now;
+        if (pouring) timeLeft -= dt / 1.5;
+        else timeLeft -= dt;
+        if(timeLeft <= 0) {
+          timeLeft = 0;
+          updateTimer();
+          finishOrder();
+          return;
+        }
+        updateTimer();
+        if(timeLeft < 6 && Math.floor(timeLeft * 10) % 10 === 0) playTickSound();
+        gameTimer = requestAnimationFrame(tick);
+      }
+      gameTimer = requestAnimationFrame(tick);
+    }
+
+    function stopGameTimer() {
+      if(gameTimer) cancelAnimationFrame(gameTimer);
+      gameTimer = null;
+    }
+
+    function resumeGameTimer() {
+      runGameTimer();
+    }
+
+    function updateTimer() {
+      let frac = Math.max(0, timeLeft / totalTime);
+      let strokeAll = 2 * Math.PI * 14;
+      $("#timer-bar").setAttribute('stroke-dasharray', strokeAll);
+      $("#timer-bar").setAttribute('stroke-dashoffset', strokeAll * (1 - frac));
+      $("#timer-text").textContent = Math.max(0, Math.ceil(timeLeft));
+    }
+
+    // POUR SYSTEM
+    function setupPourInput() {
+      $("#cup-svg").addEventListener('mousedown', startPour);
+      $("#cup-svg").addEventListener('mouseup', endPour);
+      $("#cup-svg").addEventListener('mouseleave', () => {
+        if(pouring) endPour();
+      });
+      
+      $("#cup-svg").addEventListener('touchstart', startPour, {passive: false});
+      $("#cup-svg").addEventListener('touchend', endPour);
+      
+      document.addEventListener('touchmove', e => {
+        if(pouring) e.preventDefault();
+      }, {passive: false});
+    }
+
+    function startPour(e) {
+      if(paused || pouring) return;
+      pouring = true;
+      pourStart = performance.now();
+      requestAnimationFrame(updatePourAnim);
+      animHand(-30);
+      $("#jug-liquid").setAttribute('height', '32');
+      $("#jug-liquid").setAttribute('y', '34');
+    }
+
+    function endPour(e) {
+      if(!pouring) return;
+      pouring = false;
+      animHand(-7);
+      $("#jug-liquid").setAttribute('height', '0');
+      finishOrder();
+    }
+
+    function updatePourAnim(now) {
+      if(!pouring || paused) return;
+      if(!lastPourUpdate) lastPourUpdate = now;
+      let dt = (now - lastPourUpdate) / 1000;
+      lastPourUpdate = now;
+      pourDelta += dt;
+      
+      let pourSpeed = getPourSpeed();
+      let inc = pourSpeed * dt;
+      let newLevel = clamp(liquidLevel + inc, 0, 276 + 25);
+      
+      if(newLevel > 276 + 17 && !$("#splash").style.display) {
+        $("#splash").style.display = "";
+        $("#cup-svg").classList.add("shake-anim");
+        playOverSound();
+        setTimeout(() => {
+          $("#splash").style.display = "none";
+          $("#cup-svg").classList.remove("shake-anim");
+        }, 420);
+      }
+      
+      setLiquidLevel(newLevel);
+      if(pouring)
+        requestAnimationFrame(updatePourAnim);
+      else {
+        lastPourUpdate = 0;
+        pourDelta = 0;
+      }
+    }
+
+    function finishOrder() {
+      pouring = false;
+      let maxPix = 276;
+      let fracTarget = targetFrac.num / targetFrac.denom;
+      let overLimit = fracTarget * 1.1;
+      let cupFullPix = 276;
+      let filledFrac = clamp(liquidLevel / cupFullPix, 0, 1.2);
+      
+      let delta = Math.abs(filledFrac - fracTarget);
+      let overflowed = filledFrac > overLimit;
+      let precision = Math.max(0, 1 - delta / 0.12);
+      let accuracy = 1 - delta;
+      let overflowPer = filledFrac > fracTarget? clamp((filledFrac - fracTarget) / fracTarget, 0, 1): 0;
+      let points = overflowed? Math.round((precision - 0.16) * 100): Math.round(precision * 100);
+      
+      if(delta <= 0.055) {
+        showPrecision(`<i class='fas fa-star text-primary'></i> Hoàn hảo! Đúng ${Math.round(precision * 100)}%`);
+        shineCup();
+        playCorrectSound();
+      }
+      else if(!overflowed) {
+        showPrecision(`<i class='fas fa-check-circle text-success'></i> Độ chính xác: ${Math.round(precision * 100)}%`);
+      }
+      else {
+        showPrecision(`<i class='fas fa-bomb text-danger'></i> Tràn cốc! Lãng phí`);
+      }
+      
+      score += Math.max(0, points);
+      numOrders++;
+      accuracySum += precision;
+      overflowSum += overflowPer;
+      $("#score-show").textContent = score;
+      
+      setTimeout(() => {
+        showPrecision("");
+        toNextOrder();
+      }, 1100);
+    }
+
+    function toNextOrder() {
+      orderIndex++;
+      if(orderIndex >= orders.length) {
+        setTimeout(showGameOver, 300);
+        return;
+      }
+      setupOrder();
+    }
+
+    // CUP LIQUID
+    function setLiquidLevel(pix) {
+      let lim = clamp(pix, 0, 276 + 25);
+      $("#liquid").setAttribute('y', 344 - lim);
+      $("#liquid").setAttribute('height', lim);
+      liquidLevel = lim;
+    }
+
+    function resetLiquid() {
+      setLiquidLevel(0);
+      $("#splash").style.display = "none";
+    }
+
+    // POUR SPEED
+    let pourSpeed = 75;
+    function setPourSpeed(spd) { pourSpeed = spd; }
+    function getPourSpeed() { return pourSpeed; }
+
+    // SHINE CUP
+    function shineCup() {
+      $("#cup-svg").classList.add("shine-anim");
+      setTimeout(() => {
+        $("#cup-svg").classList.remove("shine-anim");
+      }, 600);
+    }
+
+    // ANIMATE HAND JUG
+    function animHand(deg) {
+      $("#handpour").style.transform = `rotate(${deg}deg)`;
+    }
+
+    // SHOW PRECISION
+    let precisionMsgTimer = null;
+    function showPrecision(msg) {
+      $("#precision-msg").innerHTML = msg || '';
+      clearTimeout(precisionMsgTimer);
+      if(msg) precisionMsgTimer = setTimeout(() => {
+        $("#precision-msg").innerHTML = '';
+      }, 2000);
+    }
+
+    // --- CUP MARKS
+    function renderCupMarks(nMarks) {
+      let group = $("#cup-marks");
+      group.innerHTML = '';
+      let marksArr = (nMarks >= 7)?
+        [{n:1,d:12},{n:1,d:8},{n:1,d:6},{n:1,d:5},{n:1,d:4},{n:1,d:3},{n:1,d:2},{n:3,d:4},{n:1,d:1}]
+        : (nMarks >= 5)?
+        [{n:1,d:4},{n:1,d:3},{n:1,d:2},{n:3,d:4},{n:1,d:1}]
+        : [{n:1,d:4},{n:1,d:2},{n:3,d:4},{n:1,d:1}];
+      
+      let y0 = 344, h = 277;
+      marksArr.forEach(fr => {
+        let frac = fr.n / fr.d;
+        let y = y0 - frac * h;
+        group.innerHTML += `
+          <line x1="54" y1="${y}" x2="70" y2="${y}" class="cup-mark-line"/>
+          <text x="45" y="${y + 7}" class="cup-mark">${fr.n}/${fr.d}</text>
+        `;
+      });
+      
+      group.innerHTML += `
+        <line x1="54" y1="${y0 - h}" x2="69" y2="${y0 - h}" class="cup-mark-line"/>
+        <text x="31" y="${y0 - h + 7}" class="cup-mark">1</text>
+      `;
+    }
+
+    // --- KEY SHORTCUTS for demo/dev
+    document.addEventListener('keydown', e => {
+      if(paused || !$("#game").classList.contains("hidden")) switch(e.key) {
+        case "p": pauseGame(); break;
+        case "r": resumeGame(); break;
+        case "n": finishOrder(); break;
+      }
+      if(e.key === " ") e.preventDefault();
+    });
+
+    // Early focus: start with menu display
+    (function showMenu() {
+      $("#menu").classList.remove("hidden");
+      $("#game").classList.add("hidden");
+      $("#gameover").classList.add("hidden");
+      $("#paused").classList.add("hidden");
+    })();
+  </script>
+</body>
+</html>
+

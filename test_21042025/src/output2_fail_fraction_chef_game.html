@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đầu Bếp Phân Số - Fraction Chef Game</title>
+    <style>
+        /* Basic styling */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f5f5f5;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .game-container {
+            width: 800px;
+            height: 600px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+            margin-top: 20px;
+        }
+        
+        .kitchen-background {
+            width: 100%;
+            height: 100%;
+            background-color: #f9f3e9;
+            position: relative;
+        }
+        
+        .game-title {
+            text-align: center;
+            color: #5a3921;
+            margin: 20px 0;
+        }
+        
+        .measuring-area {
+            position: absolute;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            width: 600px;
+            height: 300px;
+        }
+        
+        .measuring-cup {
+            width: 200px;
+            height: 250px;
+            position: relative;
+        }
+        
+        .cup-svg {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .ingredient-container {
+            width: 150px;
+            height: 200px;
+            position: absolute;
+            top: -100px;
+            left: 50%;
+            transform: translateX(-50%) rotate(0deg);
+            transform-origin: bottom center;
+            cursor: grab;
+            transition: transform 0.1s ease-out;
+        }
+        
+        .container-svg {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .measurement-markers {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        
+        .marker {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+        }
+        
+        .marker-label {
+            position: absolute;
+            left: -30px;
+            font-size: 14px;
+            color: #5a3921;
+        }
+        
+        .target-marker {
+            background-color: rgba(255,0,0,0.5);
+        }
+        
+        .ingredient-level {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: rgba(255, 222, 173, 0.8);
+            transition: height 0.3s ease-out;
+            border-radius: 0 0 20px 20px;
+        }
+        
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        
+        button {
+            padding: 10px 20px;
+            background-color: #5a3921;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        button:hover {
+            background-color: #7a5941;
+        }
+        
+        .chef {
+            position: absolute;
+            top: 50px;
+            right: 50px;
+            width: 150px;
+            height: 200px;
+        }
+        
+        .feedback-display {
+            position: absolute;
+            top: 50px;
+            left: 50px;
+            width: 200px;
+            background-color: white;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        
+        .feedback-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #5a3921;
+        }
+        
+        .feedback-message {
+            font-size: 14px;
+            color: #333;
+        }
+        
+        .game-phase {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            font-size: 18px;
+            color: #5a3921;
+        }
+        
+        .pouring-stream {
+            position: absolute;
+            width: 10px;
+            background-color: rgba(255, 222, 173, 0.8);
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1 class="game-title">Đầu Bếp Phân Số - Fraction Chef</h1>
+    
+    <div class="game-container">
+        <div class="kitchen-background">
+            <div class="game-phase">Phase: Present - Learning About Fractions</div>
+            
+            <div class="feedback-display">
+                <div class="feedback-title">Chef's Tip:</div>
+                <div class="feedback-message">Welcome to Fraction Chef! I'll teach you how to measure ingredients using fractions. Try to pour exactly 1/3 cup of flour!</div>
+            </div>
+            
+            <!-- Chef character (SVG placeholder) -->
+            <svg class="chef" viewBox="0 0 100 150">
+                <circle cx="50" cy="30" r="25" fill="#FFD700" stroke="#000" stroke-width="2"/>
+                <rect x="25" y="55" width="50" height="70" fill="#FFFFFF" stroke="#000" stroke-width="2"/>
+                <circle cx="40" cy="25" r="5" fill="#000"/>
+                <circle cx="60" cy="25" r="5" fill="#000"/>
+                <path d="M 40 40 Q 50 50 60 40" fill="none" stroke="#000" stroke-width="2"/>
+                <rect x="25" y="55" width="50" height="10" fill="#5a3921"/>
+            </svg>
+            
+            <div class="measuring-area">
+                <!-- Measuring cup (SVG) -->
+                <div class="measuring-cup">
+                    <svg class="cup-svg" viewBox="0 0 100 120">
+                        <path d="M 20 10 L 80 10 L 90 120 L 10 120 Z" fill="none" stroke="#000" stroke-width="2"/>
+                    </svg>
+                    
+                    <!-- Measurement markers -->
+                    <div class="measurement-markers">
+                        <div class="marker" style="bottom: 20%;">
+                            <span class="marker-label">1/4</span>
+                        </div>
+                        <div class="marker" style="bottom: 33%;">
+                            <span class="marker-label">1/3</span>
+                        </div>
+                        <div class="marker target-marker" style="bottom: 33%;">
+                            <span class="marker-label" style="color: red;">TARGET</span>
+                        </div>
+                        <div class="marker" style="bottom: 50%;">
+                            <span class="marker-label">1/2</span>
+                        </div>
+                        <div class="marker" style="bottom: 67%;">
+                            <span class="marker-label">2/3</span>
+                        </div>
+                        <div class="marker" style="bottom: 75%;">
+                            <span class="marker-label">3/4</span>
+                        </div>
+                        <div class="marker" style="bottom: 100%;">
+                            <span class="marker-label">1</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Ingredient level -->
+                    <div class="ingredient-level" style="height: 0%;"></div>
+                </div>
+                
+                <!-- Ingredient container (SVG) -->
+                <div class="ingredient-container" id="ingredientContainer">
+                    <svg class="container-svg" viewBox="0 0 100 120">
+                        <rect x="10" y="20" width="80" height="100" fill="#f5deb3" stroke="#000" stroke-width="2"/>
+                        <path d="M 10 20 Q 50 10 90 20" fill="#f5deb3" stroke="#000" stroke-width="2"/>
+                        <text x="50" y="70" text-anchor="middle" fill="#5a3921">FLOUR</text>
+                    </svg>
+                </div>
+                
+                <!-- Pouring stream -->
+                <div class="pouring-stream" id="pouringStream"></div>
+            </div>
+            
+            <div class="controls">
+                <button id="resetButton">Reset</button>
+                <button id="nextButton">Next Challenge</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Main game variables
+        let isPouring = false;
+        let startMouseY = 0;
+        let containerRotation = 0;
+        let currentLevel = 0;
+        let targetLevel = 33; // 1/3 cup (33%)
+        let pouringRate = 0;
+        let pouringInterval = null;
+        let gamePhase = 'present'; // present, practice, produce
+        
+        // DOM Elements
+        const ingredientContainer = document.getElementById('ingredientContainer');
+        const ingredientLevel = document.querySelector('.ingredient-level');
+        const pouringStream = document.getElementById('pouringStream');
+        const resetButton = document.getElementById('resetButton');
+        const nextButton = document.getElementById('nextButton');
+        const feedbackMessage = document.querySelector('.feedback-message');
+        const gamePhaseDisplay = document.querySelector('.game-phase');
+        
+        // Event Listeners
+        ingredientContainer.addEventListener('mousedown', startPouring);
+        document.addEventListener('mousemove', updatePouring);
+        document.addEventListener('mouseup', stopPouring);
+        resetButton.addEventListener('click', resetMeasurement);
+        nextButton.addEventListener('click', nextChallenge);
+        
+        // Core measurement system functions
+        function startPouring(e) {
+            isPouring = true;
+            startMouseY = e.clientY;
+            ingredientContainer.style.cursor = 'grabbing';
+            
+            // Start the pouring animation
+            pouringInterval = setInterval(updateMeasurement, 50);
+        }
+        
+        function updatePouring(e) {
+            if (!isPouring) return;
+            
+            // Calculate rotation based on mouse movement
+            const deltaY = startMouseY - e.clientY;
+            containerRotation = Math.min(Math.max(deltaY * 0.2, 0), 90);
+            
+            // Update container rotation
+            ingredientContainer.style.transform = `translateX(-50%) rotate(${containerRotation}deg)`;
+            
+            // Calculate pouring rate based on rotation
+            pouringRate = 0;
+            if (containerRotation > 30) {
+                pouringRate = (containerRotation - 30) / 60; // 0 to 1 scale
+            }
+            
+            // Update pouring stream
+            if (pouringRate > 0) {
+                const streamHeight = 100 + (currentLevel / 100) * 150;
+                pouringStream.style.height = `${streamHeight}px`;
+                pouringStream.style.display = 'block';
+            } else {
+                pouringStream.style.display = 'none';
+            }
+        }
+        
+        function stopPouring() {
+            isPouring = false;
+            ingredientContainer.style.cursor = 'grab';
+            
+            // Stop the pouring animation
+            clearInterval(pouringInterval);
+            pouringStream.style.display = 'none';
+            
+            // Check measurement accuracy
+            checkAccuracy();
+        }
+        
+        function updateMeasurement() {
+            if (pouringRate > 0) {
+                // Increase level based on pouring rate
+                currentLevel += pouringRate * 0.5;
+                currentLevel = Math.min(currentLevel, 100);
+                
+                // Update visual representation
+                ingredientLevel.style.height = `${currentLevel}%`;
+            }
+        }
+        
+        function resetMeasurement() {
+            currentLevel = 0;
+            ingredientLevel.style.height = '0%';
+            containerRotation = 0;
+            ingredientContainer.style.transform = 'translateX(-50%) rotate(0deg)';
+            pouringStream.style.display = 'none';
+            updateFeedback('Try again! Pour exactly to the 1/3 mark.');
+        }
+        
+        function checkAccuracy() {
+            const error = Math.abs(currentLevel - targetLevel);
+            
+            if (error < 3) {
+                // Perfect measurement
+                updateFeedback('Perfect! You measured exactly 1/3 cup!');
+            } else if (error < 7) {
+                // Close measurement
+                updateFeedback('Almost there! You\'re very close to 1/3 cup.');
+            } else if (currentLevel < targetLevel) {
+                // Too little
+                updateFeedback('Too little! You need to pour more to reach 1/3 cup.');
+            } else {
+                // Too much
+                updateFeedback('Too much! You\'ve poured more than 1/3 cup.');
+            }
+        }
+        
+        function updateFeedback(message) {
+            feedbackMessage.textContent = message;
+        }
+        
+        function nextChallenge() {
+            // Cycle through game phases
+            if (gamePhase === 'present') {
+                gamePhase = 'practice';
+                gamePhaseDisplay.textContent = 'Phase: Practice - Try Measuring Yourself';
+                updateFeedback('Now it\'s your turn! Try to measure exactly 1/4 cup of flour.');
+                targetLevel = 25; // 1/4 cup (25%)
+                
+                // Update target marker
+                document.querySelector('.target-marker').style.bottom = '20%';
+                
+            } else if (gamePhase === 'practice') {
+                gamePhase = 'produce';
+                gamePhaseDisplay.textContent = 'Phase: Produce - Create Your Recipe';
+                updateFeedback('Great job! Now create your own recipe. Try measuring 1/2 cup of flour.');
+                targetLevel = 50; // 1/2 cup (50%)
+                
+                // Update target marker
+                document.querySelector('.target-marker').style.bottom = '50%';
+                
+            } else {
+                // Reset to first phase
+                gamePhase = 'present';
+                gamePhaseDisplay.textContent = 'Phase: Present - Learning About Fractions';
+                updateFeedback('Let\'s start again! I\'ll teach you how to measure ingredients using fractions. Try to pour exactly 1/3 cup of flour!');
+                targetLevel = 33; // 1/3 cup (33%)
+                
+                // Update target marker
+                document.querySelector('.target-marker').style.bottom = '33%';
+            }
+            
+            // Reset measurement
+            resetMeasurement();
+        }
+        
+        // Initialize the game
+        function initGame() {
+            updateFeedback('Welcome to Fraction Chef! I\'ll teach you how to measure ingredients using fractions. Try to pour exactly 1/3 cup of flour!');
+        }
+        
+        // Start the game
+        initGame();
+    </script>
+</body>
+</html>
